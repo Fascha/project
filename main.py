@@ -2,6 +2,8 @@ import lib.wiimote as wiimote
 import time
 import sys
 
+from functools import partial
+
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
 
 
@@ -35,9 +37,11 @@ class PaintArea(QtWidgets.QWidget):
         self.setMouseTracking(True) # only get events when button is pressed
         self.init_ui()
 
+        self.active_color = QtGui.QColor(255, 255, 255)
+        self.active_size = 20
+
     def init_ui(self):
         self.setWindowTitle('Drawable')
-        # self.show()
 
     def mousePressEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
@@ -58,7 +62,8 @@ class PaintArea(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, ev):
         if self.drawing:
-            self.points.append((ev.x(), ev.y()))
+            # self.points.append((ev.x(), ev.y(), self.active_color))
+            self.points.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
             self.update()
 
     def poly(self, pts):
@@ -69,13 +74,15 @@ class PaintArea(QtWidgets.QWidget):
         qp.begin(self)
         qp.setBrush(QtGui.QColor(0, 0, 0))
         qp.drawRect(ev.rect())
-        qp.setBrush(QtGui.QColor(20, 255, 190))
-        qp.setPen(QtGui.QColor(0, 155, 0))
+        # lines
+        # qp.setBrush(QtGui.QColor(20, 255, 190))
+        # dots
+
         # qp.drawPolyline(self.poly(self.points))
 
         for point in self.points:
-            qp.drawEllipse(point[0]-1, point[1] - 1, 2, 2)
-            # print(point)
+            qp.setPen(point.color)
+            qp.drawEllipse(point.x-point.size//2, point.y - point.size//2, point.size, point.size)
 
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 20))  # semi-transparent
@@ -98,6 +105,15 @@ class PaintArea(QtWidgets.QWidget):
     def stop_drawing(self):
         print("Stopped drawing")
         self.drawing = False
+
+
+class Pixel:
+
+    def __init__(self, x, y, color, size=2):
+        self.x = x
+        self.y = y
+        self.color = color
+        self.size = size
 
 
 class ColorPicker(QtWidgets.QWidget):
@@ -137,8 +153,9 @@ class ColorPicker(QtWidgets.QWidget):
         for button in self.btn_colors:
             button.unhighlight()
 
-
-
+        for button in self.btn_colors:
+            if button.highlighted:
+                self.active_color = button.color
 
 
 class Color(QtWidgets.QPushButton):
@@ -152,14 +169,17 @@ class Color(QtWidgets.QPushButton):
             background-color: rgb(%d, %d, %d);
             color: white;
             border: 5px solid green;
+            border-radius: 20px;
         """ % (r, g, b)
         self.css_not_highlighted = """
             background-color: rgb(%d, %d, %d);
             color: white;
-            border: 2px solid gray;
         """ % (r, g, b)
 
         self.setStyleSheet(self.css_not_highlighted)
+
+        self.setFixedWidth(100)
+        self.setFixedHeight(100)
 
     def highlight(self):
         print("highlight")
@@ -167,9 +187,8 @@ class Color(QtWidgets.QPushButton):
         self.setStyleSheet(self.css_highlighted)
 
     def unhighlight(self):
-        self.hightlighted = False
+        self.highlighted = False
         self.setStyleSheet(self.css_not_highlighted)
-
 
 
 class PaintApplication():
@@ -227,13 +246,19 @@ class PaintApplication():
     def setup_paint_area_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
-        # layout.addWidget(QtWidgets.QLabel("MENU COLORS ETC"), 1, Qt.Qt.AlignCenter)
-        layout.addWidget(ColorPicker(), 1, Qt.Qt.AlignCenter)
+        self.color_picker = ColorPicker()
+        layout.addWidget(self.color_picker, 1, Qt.Qt.AlignCenter)
 
         self.paint_area = PaintArea()
         layout.addWidget(self.paint_area, 11)
 
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
+
+        for color in self.color_picker.btn_colors:
+            color.clicked.connect(partial(self.update_pen_color, color.color))
+
+    def update_pen_color(self, color):
+        self.paint_area.active_color = color
 
     def connect_wm(self):
         addr = self.line_edit_br_addr.text()
@@ -256,10 +281,14 @@ class PaintApplication():
                     self.paint_area.stop_drawing()
 
     def handle_ir_data(self, ir_data):
-        if len(ir_data) > 0:
+        if len(ir_data) > 0 and self.paint_area.drawing:
             for ir_object in ir_data:
                 if ir_object['id'] < 50:
-                    self.paint_area.add_point(ir_object['x'], ir_object['y'])
+                    # self.paint_area.add_point(ir_object['x'], ir_object['y'])
+
+                    self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
+                    self.paint_area.update()
+
         print(ir_data)
 
     def fill_label_background(self, label, color):
@@ -274,21 +303,6 @@ def main():
 
     addr_hard = 'B8:AE:6E:1B:5B:03'
     name_hard = 'Nintendo RVL-CNT-01-TR'
-
-    print("Test")
-
-    # print(("Connecting to %s (%s)" % (name_hard, addr_hard)))
-    # wm = wiimote.connect(addr_hard, name_hard)
-    #
-    # app = QtWidgets.QApplication([])
-    # global pa
-    # pa = PaintArea()
-    #
-    #
-    # wm.ir.register_callback(pa.add_point)
-    # wm.buttons.register_callback(handle_button_press)
-
-
 
     app = QtWidgets.QApplication([])
     paint_app = PaintApplication()
