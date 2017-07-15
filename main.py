@@ -37,6 +37,8 @@ class PaintArea(QtWidgets.QWidget):
         self.setMouseTracking(True) # only get events when button is pressed
         self.init_ui()
 
+        self.current_cursor_point = None
+
         self.active_color = QtGui.QColor(255, 255, 255)
         self.active_size = 20
 
@@ -90,6 +92,12 @@ class PaintArea(QtWidgets.QWidget):
                 qp.drawLine(x, 0, x, self.height())
             for y in range(0, self.height(), 20):
                 qp.drawLine(0, y, self.width(), y)
+
+
+        if self.current_cursor_point:
+            qp.setPen(QtGui.QColor(255, 0, 0))
+            qp.drawRect(self.current_cursor_point[0]-10, self.current_cursor_point[1]-10, 20, 20)
+
         qp.end()
 
     def add_point(self, x, y):
@@ -189,7 +197,6 @@ class Color(QtWidgets.QPushButton):
         self.setFixedHeight(100)
 
     def highlight(self):
-        print("highlight")
         self.highlighted = True
         self.setStyleSheet(self.css_highlighted)
 
@@ -307,12 +314,18 @@ class PaintApplication:
                     self.paint_area.stop_drawing()
 
     def handle_ir_data(self, ir_data):
-        if len(ir_data) > 0 and self.paint_area.drawing:
-            for ir_object in ir_data:
-                if ir_object['id'] < 50:
-                    self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
-                    self.paint_area.update()
+        if len(ir_data) > 0:
 
+            x = [ir_object['x'] for ir_object in ir_data]
+            y = [ir_object['y'] for ir_object in ir_data]
+
+            if self.paint_area.drawing:
+                for ir_object in ir_data:
+                    if ir_object['id'] < 50:
+                        self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
+
+            self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
+            self.paint_area.update()
         print(ir_data)
 
     def fill_label_background(self, label, color):
