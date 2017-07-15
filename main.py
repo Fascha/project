@@ -40,7 +40,7 @@ class PaintArea(QtWidgets.QWidget):
         self.current_cursor_point = None
 
         self.active_color = QtGui.QColor(255, 255, 255)
-        self.active_size = 20
+        self.active_size = 5
 
     def init_ui(self):
         self.setWindowTitle('Drawable')
@@ -81,10 +81,21 @@ class PaintArea(QtWidgets.QWidget):
         # dots
 
         # qp.drawPolyline(self.poly(self.points))
+        ad = QtGui.QPainterPath()
 
         for point in self.points:
             qp.setPen(point.color)
             qp.drawEllipse(point.x-point.size//2, point.y - point.size//2, point.size, point.size)
+
+
+
+            # refactor to draw a path instead of ellipses
+            # set start point of path with moveTo(x,y)
+            # only append avg of ir data to points
+            # ad.lineTo(point.x-point.size//2, point.y - point.size//2)
+        # qp.drawPath(ad)
+
+
 
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 20))  # semi-transparent
@@ -92,7 +103,6 @@ class PaintArea(QtWidgets.QWidget):
                 qp.drawLine(x, 0, x, self.height())
             for y in range(0, self.height(), 20):
                 qp.drawLine(0, y, self.width(), y)
-
 
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
