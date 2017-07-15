@@ -106,6 +106,13 @@ class PaintArea(QtWidgets.QWidget):
         print("Stopped drawing")
         self.drawing = False
 
+    def increase_pen_size(self):
+        self.active_size += 1
+
+    def decrease_pen_size(self):
+        if self.active_size > 1:
+            self.active_size -= 1
+
 
 class Pixel:
 
@@ -191,7 +198,7 @@ class Color(QtWidgets.QPushButton):
         self.setStyleSheet(self.css_not_highlighted)
 
 
-class PaintApplication():
+class PaintApplication:
 
     WINDOW_WIDTH = 1920
     WINDOW_HEIGHT = 1080
@@ -228,6 +235,7 @@ class PaintApplication():
         layout.addWidget(QtWidgets.QLabel("WiiMote connection status"))
         self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
         self.label_wm_connection_status.setAlignment(Qt.Qt.AlignCenter)
+        self.label_wm_connection_status.setFixedHeight(100)
         self.fill_label_background(self.label_wm_connection_status, self.RED)
         layout.addWidget(self.label_wm_connection_status)
 
@@ -247,12 +255,30 @@ class PaintApplication():
         layout = QtWidgets.QVBoxLayout()
 
         self.color_picker = ColorPicker()
-        layout.addWidget(self.color_picker, 1, Qt.Qt.AlignCenter)
+        # layout.addWidget(self.color_picker, 1, Qt.Qt.AlignCenter)
+
+
+        tl = QtWidgets.QHBoxLayout()
+
+        btn_m = QtWidgets.QPushButton("-")
+        btn_p = QtWidgets.QPushButton("+")
+
+        btn_m.setMinimumHeight(100)
+        btn_p.setMinimumHeight(100)
+
+        tl.addWidget(btn_m)
+        tl.addWidget(btn_p)
+        tl.addWidget(self.color_picker)
+        layout.addLayout(tl, 1)
+
 
         self.paint_area = PaintArea()
         layout.addWidget(self.paint_area, 11)
 
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
+
+        btn_p.clicked.connect(self.paint_area.increase_pen_size)
+        btn_m.clicked.connect(self.paint_area.decrease_pen_size)
 
         for color in self.color_picker.btn_colors:
             color.clicked.connect(partial(self.update_pen_color, color.color))
@@ -284,8 +310,6 @@ class PaintApplication():
         if len(ir_data) > 0 and self.paint_area.drawing:
             for ir_object in ir_data:
                 if ir_object['id'] < 50:
-                    # self.paint_area.add_point(ir_object['x'], ir_object['y'])
-
                     self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
                     self.paint_area.update()
 
