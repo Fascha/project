@@ -24,8 +24,26 @@ TODO:
 
 """
 
+class GestureRecognizer:
+
+    """
+    Created by Fabian Schatz
+    """
+
+    """
+    $1
+    - resample (128 samples per gesture recording)
+    - rotate
+    - calc distance to check which gesture
+    """
+    def __init__(self):
+        pass
+
 
 class PaintArea(QtWidgets.QWidget):
+    """
+    Created by Fabian Schatz
+    """
 
     def __init__(self, width=1024, height=768):
         super().__init__()
@@ -34,7 +52,7 @@ class PaintArea(QtWidgets.QWidget):
         self.drawing = False
         self.grid = True
         self.points = []
-        self.setMouseTracking(True) # only get events when button is pressed
+        self.setMouseTracking(True)  # only get events when button is pressed
         self.init_ui()
 
         self.current_cursor_point = None
@@ -87,15 +105,11 @@ class PaintArea(QtWidgets.QWidget):
             qp.setPen(point.color)
             qp.drawEllipse(point.x-point.size//2, point.y - point.size//2, point.size, point.size)
 
-
-
             # refactor to draw a path instead of ellipses
             # set start point of path with moveTo(x,y)
             # only append avg of ir data to points
             # ad.lineTo(point.x-point.size//2, point.y - point.size//2)
-        # qp.drawPath(ad)
-
-
+        qp.drawPath(ad)
 
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 20))  # semi-transparent
@@ -133,6 +147,9 @@ class PaintArea(QtWidgets.QWidget):
 
 
 class Pixel:
+    """
+    Created by Fabian Schatz
+    """
 
     def __init__(self, x, y, color, size=2):
         self.x = x
@@ -141,7 +158,41 @@ class Pixel:
         self.size = size
 
 
+class Path:
+    """
+    Created by Fabian Schatz
+    """
+
+    def __init__(self, points=[], color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
+        self.points = points
+        self.stroke_width = stroke_width
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        self.opacity = opacity
+        self.css = None
+
+    def add_point(self, x, y):
+        self.points.append((x, y))
+
+    def set_color(self, r, g, b):
+        if r and g and b:
+            pass
+        else:
+            raise ValueError()
+
+    def update_css(self):
+        self.css = """
+            stroke-width: %d;
+            fill-color: rgb(%d, %d, %d);
+            stroke-opacity: %d;
+        """ % (self.stroke_width, self.r, self.g, self.b, self.opacity)
+
+
 class ColorPicker(QtWidgets.QWidget):
+    """
+    Created by Fabian Schatz
+    """
 
     def __init__(self):
         super().__init__()
@@ -184,6 +235,9 @@ class ColorPicker(QtWidgets.QWidget):
 
 
 class Color(QtWidgets.QPushButton):
+    """
+    Created by Fabian Schatz
+    """
     def __init__(self, r=0, g=0, b=0, name='TEST'):
         super().__init__()
         self.highlighted = False
@@ -216,6 +270,9 @@ class Color(QtWidgets.QPushButton):
 
 
 class PaintApplication:
+    """
+    Created by Fabian Schatz
+    """
 
     WINDOW_WIDTH = 1920
     WINDOW_HEIGHT = 1080
@@ -274,7 +331,6 @@ class PaintApplication:
         self.color_picker = ColorPicker()
         # layout.addWidget(self.color_picker, 1, Qt.Qt.AlignCenter)
 
-
         tl = QtWidgets.QHBoxLayout()
 
         btn_m = QtWidgets.QPushButton("-")
@@ -287,7 +343,6 @@ class PaintApplication:
         tl.addWidget(btn_p)
         tl.addWidget(self.color_picker)
         layout.addLayout(tl, 1)
-
 
         self.paint_area = PaintArea()
         layout.addWidget(self.paint_area, 11)
