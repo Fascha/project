@@ -144,6 +144,13 @@ class PaintArea(QtWidgets.QWidget):
         self.drawing = False
         self.grid = True
         self.points = []
+
+        self.current_mode = 'LINE'
+
+        self.paint_objects = []
+
+        self.current_paint_object = None
+
         self.setMouseTracking(True)  # only get events when button is pressed
         self.init_ui()
 
@@ -158,7 +165,10 @@ class PaintArea(QtWidgets.QWidget):
     def mousePressEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.drawing = True
-            # self.points = []
+            self.current_paint_object = Line(color=self.active_color)
+            self.current_paint_object.add_point(ev.x(), ev.y())
+            print(self.current_paint_object.points)
+            self.paint_objects.append(self.current_paint_object)
             self.update()
         elif ev.button() == QtCore.Qt.RightButton:
             # try:
@@ -174,14 +184,18 @@ class PaintArea(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, ev):
         if self.drawing:
-            # self.points.append((ev.x(), ev.y(), self.active_color))
-            self.points.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
+            if self.current_mode == 'LINE':
+                self.current_paint_object.add_point(ev.x(), ev.y())
+            else:
+                self.paint_objects.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
+
             self.update()
 
     def poly(self, pts):
         return QtGui.QPolygonF(map(lambda p: QtCore.QPointF(*p), pts))
 
     def paintEvent(self, ev):
+        print("paint event")
         qp = QtGui.QPainter()
         qp.begin(self)
         qp.setBrush(QtGui.QColor(0, 0, 0))
@@ -189,22 +203,18 @@ class PaintArea(QtWidgets.QWidget):
         # lines
         # qp.setBrush(QtGui.QColor(20, 255, 190))
         # dots
-
         # qp.drawPolyline(self.poly(self.points))
-        ad = QtGui.QPainterPath()
 
-        for point in self.points:
-            qp.setPen(point.color)
-            qp.drawEllipse(point.x-point.size//2, point.y - point.size//2, point.size, point.size)
-
-            # refactor to draw a path instead of ellipses
-            # set start point of path with moveTo(x,y)
-            # only append avg of ir data to points
-            # ad.lineTo(point.x-point.size//2, point.y - point.size//2)
-        qp.drawPath(ad)
+        for elem in self.paint_objects:
+            if type(elem) == Line:
+                line_pen = QtGui.QPen()
+                line_pen.setColor(elem.color)
+                line_pen.setWidth(50)
+                qp.setPen(line_pen)
+                qp.drawPolyline(self.poly(elem.points))
 
         if self.grid:
-            qp.setPen(QtGui.QColor(255, 100, 100, 20))  # semi-transparent
+            qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
             for x in range(0, self.width(), 20):
                 qp.drawLine(x, 0, x, self.height())
             for y in range(0, self.height(), 20):
@@ -212,6 +222,7 @@ class PaintArea(QtWidgets.QWidget):
 
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
+
             qp.drawRect(self.current_cursor_point[0]-10, self.current_cursor_point[1]-10, 20, 20)
 
         qp.end()
@@ -219,7 +230,6 @@ class PaintArea(QtWidgets.QWidget):
     def add_point(self, x, y):
         if self.drawing:
             self.points.append((x, y))
-
             self.update()
 
     def start_drawing(self):
@@ -250,14 +260,44 @@ class Pixel:
         self.size = size
 
 
+class Line:
+
+    def __init__(self, color, color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
+        self.points = []
+        self.stroke_width = stroke_width
+        self.color = color
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        self.opacity = opacity
+        self.css = None
+
+    def add_point(self, x, y):
+        self.points.append((x, y))
+
+    def set_color(self, r, g, b):
+        if r and g and b:
+            pass
+        else:
+            raise ValueError()
+
+    def update_css(self):
+        self.css = """
+            stroke-width: %d;
+            fill-color: rgb(%d, %d, %d);
+            stroke-opacity: %d;
+        """ % (self.stroke_width, self.r, self.g, self.b, self.opacity)
+
+
 class Path:
     """
     Created by Fabian Schatz
     """
 
-    def __init__(self, points=[], color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
+    def __init__(self, color, points=[], color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
         self.points = points
         self.stroke_width = stroke_width
+        self.color = color
         self.color_r = color_r
         self.color_g = color_g
         self.color_b = color_b
