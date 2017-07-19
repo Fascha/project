@@ -215,7 +215,7 @@ class PaintArea(QtWidgets.QWidget):
             if type(elem) == Line:
                 line_pen = QtGui.QPen()
                 line_pen.setColor(elem.color)
-                line_pen.setWidth(50)
+                line_pen.setWidth(elem.size)
                 qp.setPen(line_pen)
                 qp.drawPolyline(self.poly(elem.points))
 
@@ -269,31 +269,13 @@ class Pixel:
 
 class Line:
 
-    def __init__(self, color, color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
+    def __init__(self, color, size=5):
         self.points = []
-        self.stroke_width = stroke_width
+        self.size = size
         self.color = color
-        self.color_r = color_r
-        self.color_g = color_g
-        self.color_b = color_b
-        self.opacity = opacity
-        self.css = None
 
     def add_point(self, x, y):
         self.points.append((x, y))
-
-    def set_color(self, r, g, b):
-        if r and g and b:
-            pass
-        else:
-            raise ValueError()
-
-    def update_css(self):
-        self.css = """
-            stroke-width: %d;
-            fill-color: rgb(%d, %d, %d);
-            stroke-opacity: %d;
-        """ % (self.stroke_width, self.r, self.g, self.b, self.opacity)
 
 
 class Path:
