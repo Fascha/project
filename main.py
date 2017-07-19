@@ -109,7 +109,6 @@ class Mapping:
         return x/z, y/z
 
 
-
 class GestureRecognizer:
     """
     Created by Fabian Schatz & Marco Jakob
@@ -132,7 +131,6 @@ class GestureRecognizer:
         self.current_recording = []
         self.recognition_mode = False
         pass
-
 
 
 class PaintArea(QtWidgets.QWidget):
@@ -164,6 +162,7 @@ class PaintArea(QtWidgets.QWidget):
 
         self.active_color = QtGui.QColor(255, 255, 255)
         self.active_size = 5
+        self.active_shape = 'LINE'
 
     def init_ui(self):
         self.setWindowTitle('Drawable')
@@ -171,10 +170,14 @@ class PaintArea(QtWidgets.QWidget):
     def mousePressEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.drawing = True
-            self.current_paint_object = Line(color=self.active_color)
-            self.current_paint_object.add_point(ev.x(), ev.y())
-            print(self.current_paint_object.points)
-            self.paint_objects.append(self.current_paint_object)
+
+            if self.active_shape == 'LINE':
+                self.current_paint_object = Line(color=self.active_color, size=self.active_size)
+                self.current_paint_object.add_point(ev.x(), ev.y())
+                self.paint_objects.append(self.current_paint_object)
+            elif self.active_shape == 'CIRCLE':
+                self.current_paint_object = Pixel(ev.x(), ev.y(), self.active_color)
+
             self.update()
         elif ev.button() == QtCore.Qt.RightButton:
             # try:
@@ -190,9 +193,9 @@ class PaintArea(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, ev):
         if self.drawing:
-            if self.current_mode == 'LINE':
+            if self.active_shape == 'LINE':
                 self.current_paint_object.add_point(ev.x(), ev.y())
-            else:
+            elif self.active_shape == 'CIRCLE':
                 self.paint_objects.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
 
             self.update()
@@ -201,7 +204,6 @@ class PaintArea(QtWidgets.QWidget):
         return QtGui.QPolygonF(map(lambda p: QtCore.QPointF(*p), pts))
 
     def paintEvent(self, ev):
-        print("paint event")
         qp = QtGui.QPainter()
         qp.begin(self)
         qp.setBrush(QtGui.QColor(0, 0, 0))
@@ -218,6 +220,13 @@ class PaintArea(QtWidgets.QWidget):
                 line_pen.setWidth(elem.size)
                 qp.setPen(line_pen)
                 qp.drawPolyline(self.poly(elem.points))
+
+            elif type(elem) == Pixel:
+                pixel_pen = QtGui.QPen()
+                pixel_pen.setColor(elem.color)
+                pixel_pen.setWidth(elem.size)
+                qp.setPen(pixel_pen)
+                qp.drawEllipse(elem.x, elem.y, elem.size, elem.size)
 
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
@@ -310,6 +319,73 @@ class Path:
         """ % (self.stroke_width, self.r, self.g, self.b, self.opacity)
 
 
+class ShapePicker(QtWidgets.QWidget):
+
+    def __init__(self):
+        super().__init__()
+
+        self.shapes = {
+            'CIRCLE': 0,
+            'LINE': 1
+        }
+
+        self.btn_shapes = []
+
+        self.active_shape = None
+
+        self.init_ui()
+
+    def init_ui(self):
+        layout = Qt.QHBoxLayout()
+
+        for name, color in self.shapes.items():
+            btn = Shape(name)
+            layout.addWidget(btn)
+            self.btn_shapes.append(btn)
+        self.setLayout(layout)
+
+        for button in self.btn_shapes:
+            # keep this order
+            button.clicked.connect(self.choose_shape)
+            button.clicked.connect(button.highlight)
+
+    def choose_shape(self):
+        for shape in self.btn_shapes:
+            shape.unhighlight()
+
+        for shape in self.btn_shapes:
+            if shape.highlighted:
+                self.active_shape = shape.name
+
+
+class Shape(QtWidgets.QPushButton):
+    def __init__(self, name):
+        super().__init__(name)
+        self.name = name
+        self.highlighted = False
+
+        self.css_highlighted = """
+            background-color: rgb(50, 50, 50, 0.6);
+            border: 5px solid green;
+            border-radius: 20px;
+        """
+
+        self.css_not_highlighted = """
+            background-color: rgb(50, 50, 50, 0.6);
+        """
+
+        self.setStyleSheet(self.css_not_highlighted)
+
+    def highlight(self):
+        self.highlighted = True
+        self.setStyleSheet(self.css_highlighted)
+
+
+    def unhighlight(self):
+        self.highlighted = False
+        self.setStyleSheet(self.css_not_highlighted)
+
+
 class ColorPicker(QtWidgets.QWidget):
     """
     Created by Fabian Schatz
@@ -347,12 +423,9 @@ class ColorPicker(QtWidgets.QWidget):
             button.clicked.connect(button.highlight)
 
     def choose_color(self):
+        print("CHOOSE COLOR")
         for button in self.btn_colors:
             button.unhighlight()
-
-        for button in self.btn_colors:
-            if button.highlighted:
-                self.active_color = button.color
 
 
 class Color(QtWidgets.QPushButton):
@@ -383,6 +456,7 @@ class Color(QtWidgets.QPushButton):
         self.setFixedHeight(100)
 
     def highlight(self):
+        print("HIGHLIGHT")
         self.highlighted = True
         self.setStyleSheet(self.css_highlighted)
 
@@ -474,10 +548,12 @@ class PaintApplication:
     def setup_paint_area_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
-        self.color_picker = ColorPicker()
-        # layout.addWidget(self.color_picker, 1, Qt.Qt.AlignCenter)
-
         tl = QtWidgets.QHBoxLayout()
+
+        self.shape_picker = ShapePicker()
+        tl.addWidget(self.shape_picker)
+
+        self.color_picker = ColorPicker()
 
         btn_m = QtWidgets.QPushButton("-")
         btn_p = QtWidgets.QPushButton("+")
@@ -487,7 +563,7 @@ class PaintApplication:
 
         tl.addWidget(btn_m)
         tl.addWidget(btn_p)
-        # tl.addWidget(self.color_picker, 1)
+
         self.color_picker.setFixedHeight(1*self.WINDOW_HEIGHT/12)
         tl.addWidget(self.color_picker)
         layout.addLayout(tl)
@@ -500,25 +576,36 @@ class PaintApplication:
         # layout.addWidget(self.paint_area, 11)
         layout.addWidget(self.paint_area)
 
-        print("SIZE:", self.paint_area.size())
-        print("GEOMETRY:", self.paint_area.geometry())
-        print("WIDTH:", self.paint_area.width())
-        print("HEIGHT:", self.paint_area.height())
+        # print("SIZE:", self.paint_area.size())
+        # print("GEOMETRY:", self.paint_area.geometry())
+        # print("WIDTH:", self.paint_area.width())
+        # print("HEIGHT:", self.paint_area.height())
 
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
+
+
 
         btn_p.clicked.connect(self.paint_area.increase_pen_size)
         btn_m.clicked.connect(self.paint_area.decrease_pen_size)
 
-        # corner points
+        for shape in self.shape_picker.btn_shapes:
+            shape.clicked.connect(partial(self.update_shape, shape.name))
+
+        for color in self.color_picker.btn_colors:
+            color.clicked.connect(partial(self.update_pen_color, color.color))
+
+
+
+         # corner points
         self.paint_area.points.append(Pixel(0, 0, self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(self.paint_area.width()/2, self.paint_area.height()/2, self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(self.paint_area.width(), 0, self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(self.paint_area.width(), self.paint_area.height(), self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(0, self.paint_area.height(), self.paint_area.active_color, 50))
 
-        for color in self.color_picker.btn_colors:
-            color.clicked.connect(partial(self.update_pen_color, color.color))
+
+    def update_shape(self, shape):
+        self.paint_area.active_shape = shape
 
     def update_pen_color(self, color):
         self.paint_area.active_color = color
