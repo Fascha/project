@@ -4,6 +4,8 @@ import sys
 
 from functools import partial
 
+import numpy as np
+
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
 
 
@@ -30,8 +32,81 @@ TODO:
 
 class Mapping:
 
-    def __init__(self):
-        pass
+    SRC_W = 1024
+    SRC_H = 768
+
+    def __init__(self, dest_w, dest_h):
+        self.DEST_W = dest_w
+        self.DEST_H = dest_h
+        self.sx1 = 0
+        self.sy1 = 0
+        self.sx2 = self.SRC_W
+        self.sy2 = 0
+        self.sx3 = self.SRC_H
+        self.sy3 = self.SRC_W
+        self.sx4 = 0
+        self.sy4 = self.SRC_H
+
+    def calc_source_to_dest_matrix(self):
+        self.calc_scale_to_source()
+        self.calc_source_to_dest()
+
+    def calc_scale_to_source(self):
+        source_points_123 = np.matrix([[self.sx1, self.sx2, self.sx3],
+                                       [self.sy1, self.sy2, self.sy3],
+                                       [1, 1, 1]])
+
+        source_point_4 = [[self.sx4],
+                          [self.sy4],
+                          [1]]
+
+        self.scale_to_source = np.linalg.solve(source_points_123, source_point_4)
+
+        l, m, t = [float(x) for x in self.scale_to_source]
+
+        self.unit_to_source = np.matrix([[l*self.sx1, m*self.sx2, t*self.sx3],
+                                         [l*self.sy1, m*self.sy2, t*self.sy3],
+                                         [l, m, t]])
+
+    def calc_source_to_dest(self):
+        dx1 = 0
+        dy1 = 0
+        dx2 = self.DEST_W
+        dy2 = 0
+        dx3 = self.DEST_W
+        dy3 = self.DEST_H
+        dx4 = 0
+        dy4 = self.DEST_H
+
+        dest_points_123 = np.matrix([[dx1, dx2, dx3],
+                                     [dy1, dy2, dy3],
+                                     [1, 1, 1]])
+
+        dest_point_4 = np.matrix([[dx4],
+                                  [dy4],
+                                  [1]])
+
+        self.scale_to_dest = np.linalg.solve(dest_points_123, dest_point_4)
+        l, m, t = [float(x) for x in self.scale_to_dest]
+
+        self.unit_to_dest = np.matrix([[l*dx1, m*dx2, t*dx3],
+                                       [l*dy1, m*dy2, t*dy3],
+                                       [l, m, t]])
+
+        self.source_to_unit = np.linalg.inv(self.unit_to_source)
+
+        self.source_to_dest = self.unit_to_dest @ self.source_to_unit
+
+    def process_ir_data(self, x=512, y=384):
+        x, y, z = [float(w) for w in (self.source_to_dest @ np.matrix([[x],
+                                                                       [y],
+                                                                       [1]]))]
+
+        return self.dehomogenize(x, y, z)
+
+
+    def dehomogenize(self, x, y, z):
+        return x/z, y/z
 
 
 class GestureRecognizer:
@@ -62,7 +137,9 @@ class PaintArea(QtWidgets.QWidget):
 
     def __init__(self, width=1024, height=768):
         super().__init__()
+        print(self.size())
         self.resize(width, height)
+        print(self.size())
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.drawing = False
         self.grid = True
@@ -289,8 +366,8 @@ class PaintApplication:
     Created by Fabian Schatz
     """
 
-    WINDOW_WIDTH = 1920
-    WINDOW_HEIGHT = 1080
+    WINDOW_WIDTH = 1600
+    WINDOW_HEIGHT = 900
 
     name_hard = 'Nintendo RVL-CNT-01-TR'
 
@@ -306,6 +383,8 @@ class PaintApplication:
 
         self.setup_ui()
 
+        self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+
         self.window.show()
 
     def setup_ui(self):
@@ -320,6 +399,13 @@ class PaintApplication:
 
     def setup_config_ui(self):
         layout = QtWidgets.QVBoxLayout()
+
+
+        self.num_ir_objects = QtWidgets.QLabel("0")
+        fo = QtGui.QFont("Times", 128)
+        self.num_ir_objects.setFont(fo)
+        self.num_ir_objects.setFixedHeight(300)
+        layout.addWidget(self.num_ir_objects)
 
         layout.addWidget(QtWidgets.QLabel("WiiMote connection status"))
         self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
@@ -356,16 +442,35 @@ class PaintApplication:
 
         tl.addWidget(btn_m)
         tl.addWidget(btn_p)
+        # tl.addWidget(self.color_picker, 1)
+        self.color_picker.setFixedHeight(1*self.WINDOW_HEIGHT/12)
         tl.addWidget(self.color_picker)
-        layout.addLayout(tl, 1)
+        layout.addLayout(tl)
 
-        self.paint_area = PaintArea()
-        layout.addWidget(self.paint_area, 11)
+        # width needs rethinking
+        self.paint_area = PaintArea(width=(11*self.WINDOW_WIDTH/12), height=(11*self.WINDOW_HEIGHT/12))
+
+        self.paint_area.setFixedHeight(11*self.WINDOW_HEIGHT/12)
+        self.paint_area.setFixedWidth(11*self.WINDOW_WIDTH/12)
+        # layout.addWidget(self.paint_area, 11)
+        layout.addWidget(self.paint_area)
+
+        print("SIZE:", self.paint_area.size())
+        print("GEOMETRY:", self.paint_area.geometry())
+        print("WIDTH:", self.paint_area.width())
+        print("HEIGHT:", self.paint_area.height())
 
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
 
         btn_p.clicked.connect(self.paint_area.increase_pen_size)
         btn_m.clicked.connect(self.paint_area.decrease_pen_size)
+
+        # corner points
+        self.paint_area.points.append(Pixel(0, 0, self.paint_area.active_color, 50))
+        self.paint_area.points.append(Pixel(self.paint_area.width()/2, self.paint_area.height()/2, self.paint_area.active_color, 50))
+        self.paint_area.points.append(Pixel(self.paint_area.width(), 0, self.paint_area.active_color, 50))
+        self.paint_area.points.append(Pixel(self.paint_area.width(), self.paint_area.height(), self.paint_area.active_color, 50))
+        self.paint_area.points.append(Pixel(0, self.paint_area.height(), self.paint_area.active_color, 50))
 
         for color in self.color_picker.btn_colors:
             color.clicked.connect(partial(self.update_pen_color, color.color))
@@ -394,19 +499,47 @@ class PaintApplication:
                     self.paint_area.stop_drawing()
 
     def handle_ir_data(self, ir_data):
+
+        self.num_ir_objects.setText("%d" % len(ir_data))
+
+        for ir in ir_data:
+            print("x: %d\ty: %d\tid: %d" %(ir['x'], ir['y'], ir['id']))
+
         if len(ir_data) > 0:
+            print(ir_data)
+
+        if len(ir_data) == 5:
 
             x = [ir_object['x'] for ir_object in ir_data]
             y = [ir_object['y'] for ir_object in ir_data]
 
-            if self.paint_area.drawing:
-                for ir_object in ir_data:
-                    if ir_object['id'] < 50:
-                        self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
+            # if self.paint_area.drawing:
+            #     for ir_object in ir_data:
+            #         if ir_object['id'] < 50:
+            #             self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
 
-            self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
+            # self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
+
+            mapdata = self.mapping.process_ir_data(sum(x)/len(x), sum(y)/len(y))
+            print("MAPDATA:", mapdata)
+            print()
+
+            if self.paint_area.drawing:
+                self.paint_area.points.append(Pixel(mapdata[0], mapdata[1], self.paint_area.active_color, self.paint_area.active_size))
+
+            self.paint_area.current_cursor_point = (mapdata[0], mapdata[1])
+
+            self.paint_area.points.append(Pixel(100, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(200, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(300, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(400, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(500, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
+            self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
+
             self.paint_area.update()
-        print(ir_data)
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
