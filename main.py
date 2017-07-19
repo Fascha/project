@@ -19,10 +19,20 @@ TODO:
         - copy(cut) & paste
         - load & save
 
+
     - change brush/pen/color with gesture
+        - gesture for color + selection with left/right gesture
+        - gesture for brush size + in- or decrease with left/right gesture
+        - different pen: shape dependent on rotation of wiimote
 
 
 """
+
+class Mapping:
+
+    def __init__(self):
+        pass
+
 
 class GestureRecognizer:
 
