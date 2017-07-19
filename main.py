@@ -1,11 +1,11 @@
 import lib.wiimote as wiimote
+import lib.gestures as gestures
 import time
 import sys
 
 from functools import partial
 
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
-
 
 """
 TODO:
@@ -25,19 +25,17 @@ TODO:
         - gesture for brush size + in- or decrease with left/right gesture
         - different pen: shape dependent on rotation of wiimote
 
-
 """
 
-class Mapping:
 
+class Mapping:
     def __init__(self):
         pass
 
 
 class GestureRecognizer:
-
     """
-    Created by Fabian Schatz
+    Created by Fabian Schatz & Marco Jakob
     """
 
     """
@@ -51,8 +49,13 @@ class GestureRecognizer:
 
     übersicht über alle gesten
     """
+
+
     def __init__(self):
+        self.current_recording = []
+        self.recognition_mode = False
         pass
+
 
 
 class PaintArea(QtWidgets.QWidget):
@@ -66,6 +69,7 @@ class PaintArea(QtWidgets.QWidget):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.drawing = False
         self.grid = True
+        self.recognition_mode = False
         self.points = []
         self.setMouseTracking(True)  # only get events when button is pressed
         self.init_ui()
@@ -118,7 +122,7 @@ class PaintArea(QtWidgets.QWidget):
 
         for point in self.points:
             qp.setPen(point.color)
-            qp.drawEllipse(point.x-point.size//2, point.y - point.size//2, point.size, point.size)
+            qp.drawEllipse(point.x - point.size // 2, point.y - point.size // 2, point.size, point.size)
 
             # refactor to draw a path instead of ellipses
             # set start point of path with moveTo(x,y)
@@ -135,7 +139,7 @@ class PaintArea(QtWidgets.QWidget):
 
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
-            qp.drawRect(self.current_cursor_point[0]-10, self.current_cursor_point[1]-10, 20, 20)
+            qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
 
         qp.end()
 
@@ -218,7 +222,7 @@ class ColorPicker(QtWidgets.QWidget):
             'YELLOW': (255, 255, 0),
             'GRAY': (100, 100, 100),
             'BLACK': (0, 0, 0),
-            }
+        }
 
         self.btn_colors = []
 
@@ -253,6 +257,7 @@ class Color(QtWidgets.QPushButton):
     """
     Created by Fabian Schatz
     """
+
     def __init__(self, r=0, g=0, b=0, name='TEST'):
         super().__init__()
         self.highlighted = False
@@ -299,10 +304,25 @@ class PaintApplication:
     YELLOW = QtGui.QColor(255, 255, 0)
     GRAY = QtGui.QColor(100, 100, 100)
     BLACK = QtGui.QColor(0, 0, 0)
+    recognition_mode = False
+    current_recording = []
+
+    def set_recognition_mode(self, value):
+        # catch some wrong paramaters
+        if value is True:
+            self.current_recording = []
+            self.recognition_mode = True
+        else:
+            self.recognition_mode = False
+            print(self.current_recording)
+            # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
+            self.dOne.dollar_recognize(self.current_recording)
 
     def __init__(self):
 
         self.wm = None
+
+        self.dOne = gestures.DollarRecognizer()
 
         self.setup_ui()
 
@@ -385,6 +405,7 @@ class PaintApplication:
         self.wm.buttons.register_callback(self.handle_buttons)
         self.wm.ir.register_callback(self.handle_ir_data)
 
+
     def handle_buttons(self, buttons):
         for button in buttons:
             if button[0] == 'A':
@@ -392,6 +413,17 @@ class PaintApplication:
                     self.paint_area.start_drawing()
                 elif not button[1]:
                     self.paint_area.stop_drawing()
+            elif button[0] == 'B':
+                if button[1]:
+                    self.start_recognition()
+                elif not button[1]:
+                    self.stop_recognition()
+
+    def start_recognition(self):
+        self.set_recognition_mode(True)
+
+    def stop_recognition(self):
+        self.set_recognition_mode(False)
 
     def handle_ir_data(self, ir_data):
         if len(ir_data) > 0:
@@ -402,11 +434,16 @@ class PaintApplication:
             if self.paint_area.drawing:
                 for ir_object in ir_data:
                     if ir_object['id'] < 50:
-                        self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
+                        self.paint_area.points.append(
+                            Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color,
+                                  self.paint_area.active_size))
 
-            self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
+            self.paint_area.current_cursor_point = (sum(x) // len(x), sum(y) // len(y))
             self.paint_area.update()
-        print(ir_data)
+        if self.recognition_mode:
+            coord = self.paint_area.current_cursor_point
+            self.current_recording.append(coord)
+        # print(ir_data)
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
@@ -417,7 +454,6 @@ class PaintApplication:
 
 
 def main():
-
     addr_hard = 'B8:AE:6E:1B:5B:03'
     name_hard = 'Nintendo RVL-CNT-01-TR'
 
