@@ -45,6 +45,11 @@ class GestureRecognizer:
     - resample (128 samples per gesture recording)
     - rotate
     - calc distance to check which gesture
+
+
+    widget aktuelle geste anzeigen
+
+    übersicht über alle gesten
     """
     def __init__(self):
         pass
