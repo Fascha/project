@@ -6,14 +6,14 @@ Created by Marco Jakob
 Source: http://depts.washington.edu/madlab/proj/dollar/index.html
 '''
 
-# NumTemplates = 16
-NumPoints = 128
+NumTemplates = 16
+NumPoints = 64
 SquareSize = 250.0
 HalfDiagonal = 0.5 * math.sqrt(250.0 * 250.0 + 250.0 * 250.0)
 AngleRange = 45.0
 AnglePrecision = 2.0
 Phi = 0.5 * (-1.0 + math.sqrt(5.0))  # Golden Ratio
-minPoints = 128
+minPoints = 60
 
 
 class GestureTemplate:
