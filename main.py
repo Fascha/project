@@ -27,6 +27,16 @@ TODO:
         - gesture for brush size + in- or decrease with left/right gesture
         - different pen: shape dependent on rotation of wiimote
 
+
+
+
+    mapToGlobal
+
+    wiimote ircam: 1024x768
+        mitte ist bei width/2 und height/2
+        => 512/384 in die matrize reinschmeisen und dann bekommen wir koordinaten wo wir hinzeigen
+        => matrize jedes mal neu berechnen
+
 """
 
 
