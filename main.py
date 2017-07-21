@@ -117,6 +117,7 @@ class Mapping:
         y = y/z
         return x, y
 
+
 class Mapping_safe:
 
     SRC_W = 1024
@@ -236,9 +237,8 @@ class PaintArea(QtWidgets.QWidget):
 
     def __init__(self, width=1024, height=768):
         super().__init__()
-        print(self.size())
         self.resize(width, height)
-        print(self.size())
+        print("SIZE OF PAINT AREA: ", self.size())
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.drawing = False
         self.grid = True
@@ -579,16 +579,6 @@ class PaintApplication:
     recognition_mode = False
     current_recording = []
 
-    def set_recognition_mode(self, value):
-        # catch some wrong paramaters
-        if value is True:
-            self.current_recording = []
-            self.recognition_mode = True
-        else:
-            self.recognition_mode = False
-            print(self.current_recording)
-            # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
-            self.dOne.dollar_recognize(self.current_recording)
 
     def __init__(self):
 
@@ -602,11 +592,28 @@ class PaintApplication:
 
         self.window.show()
 
+    def set_recognition_mode(self, value):
+        # catch some wrong paramaters
+        if value is True:
+            self.current_recording = []
+            self.recognition_mode = True
+        else:
+            self.recognition_mode = False
+            print(self.current_recording)
+            # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
+            self.dOne.dollar_recognize(self.current_recording)
+
+
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
         self.main_layout = QtWidgets.QGridLayout()
         self.window.setLayout(self.main_layout)
 
+        print("WINDOWS SIZE BEFORE MAX: ", self.window.size())
+
+        # self.window.resize()
+        # self.window.showFullScreen()
+        print("WINDOWS SIZE AFTER MAX: ", self.window.size())
         self.window.resize(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
 
         self.setup_config_ui()
@@ -749,26 +756,21 @@ class PaintApplication:
             x = [ir_object['x'] for ir_object in ir_data]
             y = [ir_object['y'] for ir_object in ir_data]
 
-            # if self.paint_area.drawing:
-            #     for ir_object in ir_data:
-            #         if ir_object['id'] < 50:
-            #             self.paint_area.points.append(Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color, self.paint_area.active_size))
-
-            # self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
-
             # calc matrix
             if x[0] < 1023:
                 sensor_coords = []
                 for ir_object in ir_data:
                     sensor_coords.append((ir_object['x'], ir_object['y']))
-
                 print(sensor_coords)
+
+                self.mapping.calculate_source_to_dest(sensor_coords)
+
                 # self.mapping.calc_source_to_dest_matrix(*sensor_coords)
-                self.mapping.calc_source_to_dest_matrix(sensor_coords[0], sensor_coords[1], sensor_coords[2], sensor_coords[3])
+                # self.mapping.calc_source_to_dest_matrix(sensor_coords[0], sensor_coords[1], sensor_coords[2], sensor_coords[3])
 
                 # map data
-                mapped_data = self.mapping.process_ir_data()
-                # mapped_data = (400, 500)
+                mapped_data = self.mapping.get_pointing_point()
+
                 print("MAPPED_DATA:", mapped_data)
                 print()
 
