@@ -57,7 +57,17 @@ class Mapping:
         self.sx4 = 0
         self.sy4 = self.SRC_H
 
-    def calc_source_to_dest_matrix(self):
+    def calc_source_to_dest_matrix(self, s1, s2, s3, s4):
+
+        self.sx1 = s1[0]
+        self.sy1 = s1[1]
+        self.sx2 = s2[0]
+        self.sy2 = s2[1]
+        self.sx3 = s3[0]
+        self.sy3 = s3[1]
+        self.sx4 = s4[0]
+        self.sy4 = s4[1]
+
         self.calc_scale_to_source()
         self.calc_source_to_dest()
 
@@ -480,8 +490,8 @@ class PaintApplication:
     Created by Fabian Schatz
     """
 
-    WINDOW_WIDTH = 1600
-    WINDOW_HEIGHT = 900
+    WINDOW_WIDTH = 1200
+    WINDOW_HEIGHT = 600
 
     name_hard = 'Nintendo RVL-CNT-01-TR'
 
@@ -613,7 +623,6 @@ class PaintApplication:
         self.paint_area.points.append(Pixel(self.paint_area.width(), self.paint_area.height(), self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(0, self.paint_area.height(), self.paint_area.active_color, 50))
 
-
     def update_shape(self, shape):
         self.paint_area.active_shape = shape
 
@@ -632,7 +641,6 @@ class PaintApplication:
         self.wm.buttons.register_callback(self.handle_buttons)
         self.wm.ir.register_callback(self.handle_ir_data)
 
-
     def handle_buttons(self, buttons):
         for button in buttons:
             if button[0] == 'A':
@@ -640,11 +648,11 @@ class PaintApplication:
                     self.paint_area.start_drawing()
                 elif not button[1]:
                     self.paint_area.stop_drawing()
-            elif button[0] == 'B':
-                if button[1]:
-                    self.start_recognition()
-                elif not button[1]:
-                    self.stop_recognition()
+            # elif button[0] == 'B':
+            #     if button[1]:
+            #         self.start_recognition()
+            #     elif not button[1]:
+            #         self.stop_recognition()
 
     def start_recognition(self):
         self.set_recognition_mode(True)
@@ -656,13 +664,11 @@ class PaintApplication:
 
         self.num_ir_objects.setText("%d" % len(ir_data))
 
-        for ir in ir_data:
-            print("x: %d\ty: %d\tid: %d" %(ir['x'], ir['y'], ir['id']))
+        # for ir in ir_data:
+        #     print("x: %d\ty: %d\tid: %d" %(ir['x'], ir['y'], ir['id']))
 
-        if len(ir_data) > 0:
-            print(ir_data)
-
-        if len(ir_data) == 5:
+        # there needto be the four markers for the corners
+        if len(ir_data) == 4:
 
             x = [ir_object['x'] for ir_object in ir_data]
             y = [ir_object['y'] for ir_object in ir_data]
@@ -674,39 +680,56 @@ class PaintApplication:
 
             # self.paint_area.current_cursor_point = (sum(x)//len(x), sum(y)//len(y))
 
-            mapdata = self.mapping.process_ir_data(sum(x)/len(x), sum(y)/len(y))
-            print("MAPDATA:", mapdata)
-            print()
-
-            if self.paint_area.drawing:
-
+            # calc matrix
+            if x[0] < 1023:
+                sensor_coords = []
                 for ir_object in ir_data:
-                    if ir_object['id'] < 50:
-                        self.paint_area.points.append(
-                            Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color,
-                                  self.paint_area.active_size))
+                    sensor_coords.append((ir_object['x'], ir_object['y']))
 
-            self.paint_area.current_cursor_point = (sum(x) // len(x), sum(y) // len(y))
-            self.paint_area.update()
-        if self.recognition_mode:
-            coord = self.paint_area.current_cursor_point
-            self.current_recording.append(coord)
-        # print(ir_data)
-            self.paint_area.points.append(Pixel(mapdata[0], mapdata[1], self.paint_area.active_color, self.paint_area.active_size))
+                print(sensor_coords)
+                # self.mapping.calc_source_to_dest_matrix(*sensor_coords)
+                self.mapping.calc_source_to_dest_matrix(sensor_coords[0], sensor_coords[1], sensor_coords[2], sensor_coords[3])
 
-            self.paint_area.current_cursor_point = (mapdata[0], mapdata[1])
+                # map data
+                mapped_data = self.mapping.process_ir_data()
+                # mapped_data = (400, 500)
+                print("MAPPED_DATA:", mapped_data)
+                print()
 
-            self.paint_area.points.append(Pixel(100, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(200, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(300, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(400, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(500, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
-            self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
+                if self.paint_area.drawing:
+                    self.paint_area.paint_objects.append(Pixel(mapped_data[1], mapped_data[0], self.paint_area.active_color, self.paint_area.active_size))
+                    # for ir_object in ir_data:
+                    #     if ir_object['id'] < 50:
+                    #         self.paint_area.points.append(
+                    #             Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color,
+                    #                   self.paint_area.active_size))
 
-            self.paint_area.update()
+                self.paint_area.current_cursor_point = mapped_data
+                self.paint_area.update()
+
+
+
+
+
+        # if self.recognition_mode:
+        #     coord = self.paint_area.current_cursor_point
+        #     self.current_recording.append(coord)
+        # # print(ir_data)
+        #     self.paint_area.points.append(Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, self.paint_area.active_size))
+        #
+        #     self.paint_area.current_cursor_point = (mapped_data[0], mapped_data[1])
+        #
+        #     self.paint_area.points.append(Pixel(100, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(200, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(300, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(400, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(500, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #
+        #     self.paint_area.update()
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
