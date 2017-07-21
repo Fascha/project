@@ -41,7 +41,6 @@ TODO:
 
 
 class Mapping:
-
     def __init__(self, dest_w, dest_h):
         self.SRC_W = 1024
         self.SRC_H = 768
@@ -96,9 +95,9 @@ class Mapping:
             ls, ms, ts = [float(x) for x in scale_to_source]
 
             # Step 2
-            unit_to_source = np.matrix([[ls*x1, ms*x2, ts*x3],
-                                        [ls*y1, ms*y2, ts*y3],
-                                        [ls*1, ms*1, ts*1]])
+            unit_to_source = np.matrix([[ls * x1, ms * x2, ts * x3],
+                                        [ls * y1, ms * y2, ts * y3],
+                                        [ls * 1, ms * 1, ts * 1]])
 
             # Step 3
             dest_points_123 = np.matrix([[self.dx1, self.dx2, self.dx3],
@@ -113,9 +112,9 @@ class Mapping:
 
             ld, md, td = [float(x) for x in scale_to_dest]
 
-            unit_to_dest = np.matrix([[ld*self.dx1, md*self.dx2, td*self.dx3],
-                                      [ld*self.dy1, md*self.dy2, td*self.dy3],
-                                      [ld*1, md*1, td*1]])
+            unit_to_dest = np.matrix([[ld * self.dx1, md * self.dx2, td * self.dx3],
+                                      [ld * self.dy1, md * self.dy2, td * self.dy3],
+                                      [ld * 1, md * 1, td * 1]])
 
             # Step 4
             source_to_unit = np.linalg.inv(unit_to_source)
@@ -126,16 +125,15 @@ class Mapping:
             print("NOT EXACTLY 4 IR MARKER COORDINATES GIVEN")
             return
 
-
     def get_pointing_point(self):
         # Mapping of center
-        x, y, z = [float(w) for w in self.source_to_dest @ np.matrix([[self.SRC_W/2],
-                                                                      [self.SRC_H/2],
+        x, y, z = [float(w) for w in self.source_to_dest @ np.matrix([[self.SRC_W / 2],
+                                                                      [self.SRC_H / 2],
                                                                       [1]])]
 
         # step 7: dehomogenization
-        x = x/z
-        y = y/z
+        x = x / z
+        y = y / z
 
         # if x < self.DEST_W/2:
         #     x = self.DEST_W/2 + (self.DEST_W/2 - x)
@@ -146,7 +144,6 @@ class Mapping:
 
 
 class Mapping_safe:
-
     SRC_W = 1024
     SRC_H = 768
 
@@ -163,7 +160,6 @@ class Mapping_safe:
         self.sy4 = self.SRC_H
 
     def calc_source_to_dest_matrix(self, s1, s2, s3, s4):
-
         self.sx1 = s1[0]
         self.sy1 = s1[1]
         self.sx2 = s2[0]
@@ -189,8 +185,8 @@ class Mapping_safe:
 
         l, m, t = [float(x) for x in self.scale_to_source]
 
-        self.unit_to_source = np.matrix([[l*self.sx1, m*self.sx2, t*self.sx3],
-                                         [l*self.sy1, m*self.sy2, t*self.sy3],
+        self.unit_to_source = np.matrix([[l * self.sx1, m * self.sx2, t * self.sx3],
+                                         [l * self.sy1, m * self.sy2, t * self.sy3],
                                          [l, m, t]])
 
     def calc_source_to_dest(self):
@@ -214,8 +210,8 @@ class Mapping_safe:
         self.scale_to_dest = np.linalg.solve(dest_points_123, dest_point_4)
         l, m, t = [float(x) for x in self.scale_to_dest]
 
-        self.unit_to_dest = np.matrix([[l*dx1, m*dx2, t*dx3],
-                                       [l*dy1, m*dy2, t*dy3],
+        self.unit_to_dest = np.matrix([[l * dx1, m * dx2, t * dx3],
+                                       [l * dy1, m * dy2, t * dy3],
                                        [l, m, t]])
 
         self.source_to_unit = np.linalg.inv(self.unit_to_source)
@@ -230,7 +226,7 @@ class Mapping_safe:
         return self.dehomogenize(x, y, z)
 
     def dehomogenize(self, x, y, z):
-        return x/z, y/z
+        return x / z, y / z
 
 
 class GestureRecognizer:
@@ -249,7 +245,6 @@ class GestureRecognizer:
 
     übersicht über alle gesten
     """
-
 
     def __init__(self):
         self.current_recording = []
@@ -292,7 +287,7 @@ class PaintArea(QtWidgets.QWidget):
         self.paint_objects.append(Pixel(0, self.height(), self.active_color, self.active_size))
         self.paint_objects.append(Pixel(self.width(), 0, self.active_color, self.active_size))
         self.paint_objects.append(Pixel(self.width(), self.height(), self.active_color, self.active_size))
-        self.paint_objects.append(Pixel(self.width()/2, self.height()/2, self.active_color, self.active_size))
+        self.paint_objects.append(Pixel(self.width() / 2, self.height() / 2, self.active_color, self.active_size))
         #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
         #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
         #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
@@ -411,7 +406,6 @@ class Pixel:
 
 
 class Line:
-
     def __init__(self, color, size=5):
         self.points = []
         self.size = size
@@ -454,7 +448,6 @@ class Path:
 
 
 class ShapePicker(QtWidgets.QWidget):
-
     def __init__(self):
         super().__init__()
 
@@ -513,7 +506,6 @@ class Shape(QtWidgets.QPushButton):
     def highlight(self):
         self.highlighted = True
         self.setStyleSheet(self.css_highlighted)
-
 
     def unhighlight(self):
         self.highlighted = False
@@ -646,8 +638,7 @@ class PaintApplication:
             self.recognition_mode = False
             print(self.current_recording)
             # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
-            self.dOne.dollar_recognize(self.current_recording)
-
+            print(self.dOne.dollar_recognize(self.current_recording))
 
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
@@ -666,7 +657,6 @@ class PaintApplication:
 
     def setup_config_ui(self):
         layout = QtWidgets.QVBoxLayout()
-
 
         self.num_ir_objects = QtWidgets.QLabel("0")
         fo = QtGui.QFont("Times", 128)
@@ -712,15 +702,15 @@ class PaintApplication:
         tl.addWidget(btn_m)
         tl.addWidget(btn_p)
 
-        self.color_picker.setFixedHeight(1*self.WINDOW_HEIGHT/12)
+        self.color_picker.setFixedHeight(1 * self.WINDOW_HEIGHT / 12)
         tl.addWidget(self.color_picker)
         layout.addLayout(tl)
 
         # width needs rethinking
-        self.paint_area = PaintArea(width=(11*self.WINDOW_WIDTH/12), height=(11*self.WINDOW_HEIGHT/12))
+        self.paint_area = PaintArea(width=(11 * self.WINDOW_WIDTH / 12), height=(11 * self.WINDOW_HEIGHT / 12))
 
-        self.paint_area.setFixedHeight(11*self.WINDOW_HEIGHT/12)
-        self.paint_area.setFixedWidth(11*self.WINDOW_WIDTH/12)
+        self.paint_area.setFixedHeight(11 * self.WINDOW_HEIGHT / 12)
+        self.paint_area.setFixedWidth(11 * self.WINDOW_WIDTH / 12)
         # layout.addWidget(self.paint_area, 11)
         layout.addWidget(self.paint_area)
 
@@ -730,8 +720,6 @@ class PaintApplication:
         # print("HEIGHT:", self.paint_area.height())
 
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
-
-
 
         btn_p.clicked.connect(self.paint_area.increase_pen_size)
         btn_m.clicked.connect(self.paint_area.decrease_pen_size)
@@ -744,11 +732,13 @@ class PaintApplication:
 
 
 
-         # corner points
+            # corner points
         self.paint_area.points.append(Pixel(0, 0, self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(self.paint_area.width()/2, self.paint_area.height()/2, self.paint_area.active_color, 50))
+        self.paint_area.points.append(
+            Pixel(self.paint_area.width() / 2, self.paint_area.height() / 2, self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(self.paint_area.width(), 0, self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(self.paint_area.width(), self.paint_area.height(), self.paint_area.active_color, 50))
+        self.paint_area.points.append(
+            Pixel(self.paint_area.width(), self.paint_area.height(), self.paint_area.active_color, 50))
         self.paint_area.points.append(Pixel(0, self.paint_area.height(), self.paint_area.active_color, 50))
 
     def update_shape(self, shape):
@@ -776,11 +766,11 @@ class PaintApplication:
                     self.paint_area.start_drawing()
                 elif not button[1]:
                     self.paint_area.stop_drawing()
-            # elif button[0] == 'B':
-            #     if button[1]:
-            #         self.start_recognition()
-            #     elif not button[1]:
-            #         self.stop_recognition()
+            elif button[0] == 'B':
+                if button[1]:
+                    self.start_recognition()
+                elif not button[1]:
+                    self.stop_recognition()
 
     def start_recognition(self):
         self.set_recognition_mode(True)
@@ -825,32 +815,32 @@ class PaintApplication:
                     # rechts links vertauscht
                     # self.paint_area.paint_objects.append(Pixel(mapped_data[1], mapped_data[0], self.paint_area.active_color, self.paint_area.active_size))
 
-                    self.paint_area.paint_objects.append(Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, 30))
+                    self.paint_area.paint_objects.append(
+                        Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, 30))
 
                 self.paint_area.current_cursor_point = mapped_data
 
                 self.paint_area.update()
 
-
-        # if self.recognition_mode:
-        #     coord = self.paint_area.current_cursor_point
-        #     self.current_recording.append(coord)
-        # # print(ir_data)
-        #     self.paint_area.points.append(Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, self.paint_area.active_size))
-        #
-        #     self.paint_area.current_cursor_point = (mapped_data[0], mapped_data[1])
-        #
-        #     self.paint_area.points.append(Pixel(100, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(200, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(300, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(400, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(500, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #
-        #     self.paint_area.update()
+        if self.recognition_mode:
+            coord = self.paint_area.current_cursor_point
+            self.current_recording.append(coord)
+            # # print(ir_data)
+            #     self.paint_area.points.append(Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, self.paint_area.active_size))
+            #
+            #     self.paint_area.current_cursor_point = (mapped_data[0], mapped_data[1])
+            #
+            #     self.paint_area.points.append(Pixel(100, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(200, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(300, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(400, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(500, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #     self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
+            #
+            #     self.paint_area.update()
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
