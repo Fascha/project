@@ -61,6 +61,27 @@ class Mapping:
             x3, y3 = ir_markers[2]
             x4, y4 = ir_markers[3]
 
+            # links oben in ir cam: x=0 y=786
+            # rechts oben in ir cam: x=1023 y=786
+            # links unten in ir cam: x=0 y=0
+            # rechts unten in ir cam: x=1023 y=0
+
+            ir_markers_sorted = sorted(ir_markers)
+
+            if ir_markers_sorted[0][1] < ir_markers_sorted[1][1]:
+                x1, y1 = ir_markers_sorted[1]
+                x4, y4 = ir_markers_sorted[0]
+            else:
+                x1, y1 = ir_markers_sorted[0]
+                x4, y4 = ir_markers_sorted[1]
+
+            if ir_markers_sorted[2][1] < ir_markers_sorted[3][1]:
+                x2, y2 = ir_markers_sorted[3]
+                x3, y3 = ir_markers_sorted[2]
+            else:
+                x2, y2 = ir_markers_sorted[2]
+                x3, y3 = ir_markers_sorted[3]
+
             # Step 1
             source_points_123 = np.matrix([[x1, x2, x3],
                                            [y1, y2, y3],
@@ -115,6 +136,12 @@ class Mapping:
         # step 7: dehomogenization
         x = x/z
         y = y/z
+
+        # if x < self.DEST_W/2:
+        #     x = self.DEST_W/2 + (self.DEST_W/2 - x)
+        # else:
+        #     x = self.DEST_W/2 - (self.DEST_W/2 - x)
+
         return x, y
 
 
@@ -257,8 +284,19 @@ class PaintArea(QtWidgets.QWidget):
         self.current_cursor_point = None
 
         self.active_color = QtGui.QColor(255, 255, 255)
-        self.active_size = 5
+        self.active_size = 20
         self.active_shape = 'LINE'
+
+        # soem reference points for testing
+        self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
+        self.paint_objects.append(Pixel(0, self.height(), self.active_color, self.active_size))
+        self.paint_objects.append(Pixel(self.width(), 0, self.active_color, self.active_size))
+        self.paint_objects.append(Pixel(self.width(), self.height(), self.active_color, self.active_size))
+        self.paint_objects.append(Pixel(self.width()/2, self.height()/2, self.active_color, self.active_size))
+        #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
+        #     self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
 
     def init_ui(self):
         self.setWindowTitle('Drawable')
@@ -334,7 +372,7 @@ class PaintArea(QtWidgets.QWidget):
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
 
-            qp.drawRect(self.current_cursor_point[0]-10, self.current_cursor_point[1]-10, 20, 20)
+            qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
 
         qp.end()
@@ -579,7 +617,6 @@ class PaintApplication:
     recognition_mode = False
     current_recording = []
 
-
     def __init__(self):
 
         self.wm = None
@@ -588,7 +625,15 @@ class PaintApplication:
 
         self.setup_ui()
 
+        self.mapping = Mapping(1920, 1080)
+        print("ASSERTED: (99.44448537537721, 847.1789582258892)")
+        testdata = [(500, 300), (950, 300), (900, 700), (450, 690)]
+        self.mapping.calculate_source_to_dest(testdata)
+        print("RESULT: ", self.mapping.get_pointing_point())
+
         self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+
+        # MAPPING TEST
 
         self.window.show()
 
@@ -745,6 +790,11 @@ class PaintApplication:
 
     def handle_ir_data(self, ir_data):
 
+        # links oben in ir cam: x=0 y=786
+        # rechts oben in ir cam: x=1023 y=786
+        # links unten in ir cam: x=0 y=0
+        # rechts unten in ir cam: x=1023 y=0
+
         self.num_ir_objects.setText("%d" % len(ir_data))
 
         # for ir in ir_data:
@@ -761,33 +811,25 @@ class PaintApplication:
                 sensor_coords = []
                 for ir_object in ir_data:
                     sensor_coords.append((ir_object['x'], ir_object['y']))
-                print(sensor_coords)
+                # print(sensor_coords)
 
                 self.mapping.calculate_source_to_dest(sensor_coords)
-
-                # self.mapping.calc_source_to_dest_matrix(*sensor_coords)
-                # self.mapping.calc_source_to_dest_matrix(sensor_coords[0], sensor_coords[1], sensor_coords[2], sensor_coords[3])
 
                 # map data
                 mapped_data = self.mapping.get_pointing_point()
 
-                print("MAPPED_DATA:", mapped_data)
-                print()
+                # print("MAPPED_DATA:", mapped_data)
+                # print()
 
                 if self.paint_area.drawing:
                     # rechts links vertauscht
-                    self.paint_area.paint_objects.append(Pixel(mapped_data[1], mapped_data[0], self.paint_area.active_color, self.paint_area.active_size))
-                    # for ir_object in ir_data:
-                    #     if ir_object['id'] < 50:
-                    #         self.paint_area.points.append(
-                    #             Pixel(ir_object['x'], ir_object['y'], self.paint_area.active_color,
-                    #                   self.paint_area.active_size))
+                    # self.paint_area.paint_objects.append(Pixel(mapped_data[1], mapped_data[0], self.paint_area.active_color, self.paint_area.active_size))
+
+                    self.paint_area.paint_objects.append(Pixel(mapped_data[0], mapped_data[1], self.paint_area.active_color, 30))
 
                 self.paint_area.current_cursor_point = mapped_data
+
                 self.paint_area.update()
-
-
-
 
 
         # if self.recognition_mode:
