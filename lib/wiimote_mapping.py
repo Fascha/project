@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Mapping:
 
     def __init__(self, dest_w, dest_h):
@@ -16,11 +17,6 @@ class Mapping:
 
     def calculate_source_to_dest(self, ir_markers):
         if len(ir_markers) == 4:
-            # x1, y1 = ir_markers[0]
-            # x2, y2 = ir_markers[1]
-            # x3, y3 = ir_markers[2]
-            # x4, y4 = ir_markers[3]
-
             # links oben in ir cam: x=0 y=786
             # rechts oben in ir cam: x=1023 y=786
             # links unten in ir cam: x=0 y=0
@@ -85,7 +81,6 @@ class Mapping:
         else:
             print("NOT EXACTLY 4 IR MARKER COORDINATES GIVEN")
             return
-
 
     def get_pointing_point(self):
         # Mapping of center

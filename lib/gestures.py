@@ -379,7 +379,6 @@ class DollarRecognizer:
                                                (930.454977518826, 277), (933, 277), (936, 277), (938, 277), (940, 277),
                                                (942, 277)]))
 
-
     def AddTemplate(self, points, name="newGesture"):
         new_gesture = GestureTemplate(name, points)
         self.templates.append(new_gesture)  # append new template
