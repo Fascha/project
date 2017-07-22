@@ -249,7 +249,10 @@ class PaintArea(QtWidgets.QWidget):
 
 class ShapePicker(QtWidgets.QWidget):
 
-    def __init__(self):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
         super().__init__()
 
         self.shapes = {
@@ -264,10 +267,14 @@ class ShapePicker(QtWidgets.QWidget):
         self.init_ui()
 
     def init_ui(self):
+        self.setFixedWidth(self.width)
+        self.setFixedHeight(self.height)
         layout = Qt.QHBoxLayout()
 
         for name, color in self.shapes.items():
             btn = Shape(name)
+            btn.setFixedSize(self.height - 20, self.height - 20)
+
             layout.addWidget(btn)
             self.btn_shapes.append(btn)
         self.setLayout(layout)
@@ -319,7 +326,12 @@ class ColorPicker(QtWidgets.QWidget):
     Created by Fabian Schatz
     """
 
-    def __init__(self):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+
+
         super().__init__()
 
         self.colors = {
@@ -337,10 +349,15 @@ class ColorPicker(QtWidgets.QWidget):
         self.init_ui()
 
     def init_ui(self):
+
+        self.setFixedWidth(self.width)
+        self.setFixedHeight(self.height)
         layout = Qt.QHBoxLayout()
 
         for name, color in self.colors.items():
             btn = Color(color[0], color[1], color[2], name)
+            btn.setFixedSize(self.height - 20, self.height - 20)
+
             layout.addWidget(btn)
             self.btn_colors.append(btn)
         self.setLayout(layout)
@@ -349,6 +366,8 @@ class ColorPicker(QtWidgets.QWidget):
             # keep this order
             button.clicked.connect(self.choose_color)
             button.clicked.connect(button.highlight)
+
+
 
     def choose_color(self):
         print("CHOOSE COLOR")
@@ -380,8 +399,8 @@ class Color(QtWidgets.QPushButton):
 
         self.setStyleSheet(self.css_not_highlighted)
 
-        self.setFixedWidth(100)
-        self.setFixedHeight(100)
+        # self.setFixedWidth(100)
+        # self.setFixedHeight(100)
 
     def highlight(self):
         print("HIGHLIGHT")
@@ -461,6 +480,7 @@ class PaintApplication:
         self.setup_paint_area_ui()
 
     def setup_config_ui(self):
+
         layout = QtWidgets.QVBoxLayout()
 
         self.num_ir_objects = QtWidgets.QLabel("0")
@@ -491,42 +511,44 @@ class PaintApplication:
     def setup_paint_area_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
-        tl = QtWidgets.QHBoxLayout()
+        top_line_widget = QtWidgets.QWidget()
+        top_line_widget.setFixedHeight(1*self.screen_height/12)
+        top_line_widget_layout = QtWidgets.QHBoxLayout()
 
-        self.shape_picker = ShapePicker()
-        tl.addWidget(self.shape_picker)
+        top_line_widget_layout.setAlignment(Qt.Qt.AlignCenter)
 
-        self.color_picker = ColorPicker()
+        top_line_widget.setLayout(top_line_widget_layout)
+
+        # for debugging
+        # top_line_widget.setStyleSheet("border: 5px solid green; border-radius: 20px;")
+
+        self.shape_picker = ShapePicker(top_line_widget.width(), top_line_widget.height())
+        self.shape_picker.setFixedHeight(top_line_widget.height())
+        top_line_widget_layout.addWidget(self.shape_picker)
+
+        self.color_picker = ColorPicker(top_line_widget.width(), top_line_widget.height())
 
         btn_m = QtWidgets.QPushButton("-")
         btn_p = QtWidgets.QPushButton("+")
 
-        btn_m.setMinimumHeight(100)
-        btn_p.setMinimumHeight(100)
+        btn_m.setFixedSize(top_line_widget.height() - 20, top_line_widget.height() - 20)
+        btn_p.setFixedSize(top_line_widget.height() - 20, top_line_widget.height() - 20)
 
-        tl.addWidget(btn_m)
-        tl.addWidget(btn_p)
+        top_line_widget_layout.addWidget(btn_m)
+        top_line_widget_layout.addWidget(btn_p)
 
-        self.color_picker.setFixedHeight(1*self.WINDOW_HEIGHT/12)
-        tl.addWidget(self.color_picker)
-        layout.addLayout(tl)
+        top_line_widget_layout.addWidget(self.color_picker)
 
-        # width needs rethinking
-        self.paint_area = PaintArea(width=(11*self.WINDOW_WIDTH/12), height=(11*self.WINDOW_HEIGHT/12))
+        layout.addWidget(top_line_widget)
 
-        self.paint_area.setFixedHeight(11*self.WINDOW_HEIGHT/12)
-        self.paint_area.setFixedWidth(11*self.WINDOW_WIDTH/12)
-        # layout.addWidget(self.paint_area, 11)
+        self.paint_area = PaintArea(width=(11*self.screen_width/12), height=(11*self.screen_height/12))
+
+        self.paint_area.setFixedHeight(11*self.screen_height/12)
+        self.paint_area.setFixedWidth(11*self.screen_width/12)
+
         layout.addWidget(self.paint_area)
 
-        # print("SIZE:", self.paint_area.size())
-        # print("GEOMETRY:", self.paint_area.geometry())
-        # print("WIDTH:", self.paint_area.width())
-        # print("HEIGHT:", self.paint_area.height())
-
         self.main_layout.addLayout(layout, 0, 2, 12, 10)
-
-
 
         btn_p.clicked.connect(self.paint_area.increase_pen_size)
         btn_m.clicked.connect(self.paint_area.decrease_pen_size)
