@@ -247,7 +247,6 @@ class PaintArea(QtWidgets.QWidget):
             self.active_size -= 1
 
 
-
 class ShapePicker(QtWidgets.QWidget):
 
     def __init__(self):
@@ -414,6 +413,10 @@ class PaintApplication:
 
     def __init__(self):
 
+        screen = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        print(" Screen width: " + str(screen.width()) + "x" + str(screen.height()))
+        self.screen_width = screen.width()
+        self.screen_height = screen.height()
         self.wm = None
 
         self.dOne = gestures.DollarRecognizer()
@@ -428,8 +431,6 @@ class PaintApplication:
 
         self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
 
-        # MAPPING TEST
-
         self.window.show()
 
     def set_recognition_mode(self, value):
@@ -443,25 +444,24 @@ class PaintApplication:
             # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
             self.dOne.dollar_recognize(self.current_recording)
 
-
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
-        self.main_layout = QtWidgets.QGridLayout()
-        self.window.setLayout(self.main_layout)
 
         print("WINDOWS SIZE BEFORE MAX: ", self.window.size())
 
-        # self.window.resize()
-        # self.window.showFullScreen()
+        self.window.showFullScreen()
+        self.window.resize(self.screen_width, self.screen_height)
+
         print("WINDOWS SIZE AFTER MAX: ", self.window.size())
-        self.window.resize(self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
+
+        self.main_layout = QtWidgets.QGridLayout()
+        self.window.setLayout(self.main_layout)
 
         self.setup_config_ui()
         self.setup_paint_area_ui()
 
     def setup_config_ui(self):
         layout = QtWidgets.QVBoxLayout()
-
 
         self.num_ir_objects = QtWidgets.QLabel("0")
         fo = QtGui.QFont("Times", 128)

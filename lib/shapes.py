@@ -11,6 +11,9 @@ class Pixel:
 
 
 class Line:
+    """
+    Created by Fabian Schatz
+    """
 
     def __init__(self, color, size=5):
         self.points = []
