@@ -64,6 +64,31 @@ class GestureRecognizer:
         pass
 
 
+class Command:
+    def undo(self): pass
+    def redo(self): pass
+
+
+class UndoHandler(QtWidgets.QUndoCommand):
+    """
+    Created by Marco Peisker
+    """
+
+    def __init__(self, paint_objects):
+        super().__init__()
+        self.paint_objects = paint_objects
+        self.deleted_obj = None
+
+    def undo(self):
+        print("undo", self.paint_objects)
+        self.deleted_obj = self.paint_objects[-1]
+        self.paint_objects.pop()
+
+    def redo(self):
+        if (self.deleted_obj != None):
+            self.paint_objects.append(self.deleted_obj)
+
+
 class PaintArea(QtWidgets.QWidget):
     """
     Created by Fabian Schatz
@@ -75,6 +100,9 @@ class PaintArea(QtWidgets.QWidget):
         print("SIZE OF PAINT AREA: ", self.size())
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.drawing = False
+
+        self.stack = QtWidgets.QUndoStack()
+
         self.grid = True
         self.recognition_mode = False
         self.points = []
@@ -130,6 +158,7 @@ class PaintArea(QtWidgets.QWidget):
     def mouseReleaseEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.drawing = False
+            self.stack.push(UndoHandler(self.paint_objects))
             self.update()
 
     def mouseMoveEvent(self, ev):
@@ -196,6 +225,17 @@ class PaintArea(QtWidgets.QWidget):
     def stop_drawing(self):
         print("Stopped drawing")
         self.drawing = False
+
+    # Undo function to remove last step from the stack
+    def undo_drawing(self):
+        if len(self.paint_objects) != 0:
+            self.stack.undo()
+            self.update()
+
+    # Redo function
+    def redo_drawing(self):
+        self.stack.redo()
+        self.update()
 
     def increase_pen_size(self):
         self.active_size += 1
@@ -451,7 +491,7 @@ class PaintApplication:
             self.recognition_mode = True
         else:
             self.recognition_mode = False
-            print(self.current_recording)
+            # print(self.current_recording)
             # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
             self.dOne.dollar_recognize(self.current_recording)
 
@@ -583,11 +623,25 @@ class PaintApplication:
                     self.paint_area.start_drawing()
                 elif not button[1]:
                     self.paint_area.stop_drawing()
-            # elif button[0] == 'B':
-            #     if button[1]:
-            #         self.start_recognition()
-            #     elif not button[1]:
-            #         self.stop_recognition()
+            elif button[0] == 'B':
+                if button[1]:
+                    self.start_recognition()
+                elif not button[1]:
+                    self.stop_recognition()
+            # Undo last step
+            elif button[0] == 'Minus':
+                if button[1]:
+                    self.paint_area.undo_drawing()
+                elif not button[1]:
+                    # do something
+                    print("Undo button not pressed")
+            # Redo last step
+            elif button[0] == 'Plus':
+                if button[1]:
+                    self.paint_area.redo_drawing()
+                elif not button[1]:
+                    # do something
+                    print("Redo button not pressed")
 
     def start_recognition(self):
         self.set_recognition_mode(True)
