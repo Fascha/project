@@ -413,7 +413,7 @@ def dollar_resample(points, n):
     I = PathLength(points) / (n - 1)  # interval length
     D = 0.0
     # print("X")
-    # print(points)
+    print(points)
     newpoints = [points[0]]
     for i in range(1, len(points)):
         d = Distance(points[i - 1], points[i])

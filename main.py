@@ -448,9 +448,9 @@ class PaintApplication:
             self.recognition_mode = True
         else:
             self.recognition_mode = False
-            # print(self.current_recording)
+            print(self.current_recording)
             # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
-            self.dOne.dollar_recognize(self.current_recording)
+            print(self.dOne.dollar_recognize(self.current_recording))
 
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
@@ -487,7 +487,8 @@ class PaintApplication:
 
         layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
         self.line_edit_br_addr = QtWidgets.QLineEdit()
-        self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
+        # self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
+        self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
         layout.addWidget(self.line_edit_br_addr)
         self.button_connect = QtWidgets.QPushButton("Connect")
         self.button_connect.clicked.connect(self.connect_wm)
@@ -644,6 +645,10 @@ class PaintApplication:
                 self.paint_area.current_cursor_point = mapped_data
 
                 self.paint_area.update()
+
+        if self.recognition_mode:
+            coord = self.paint_area.current_cursor_point
+            self.current_recording.append(coord)
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
