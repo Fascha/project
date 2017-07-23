@@ -515,7 +515,8 @@ class PaintApplication:
         self.gesture_recognition = GestureRecognition()
         self.recognition_data = []
         self.recognition_mode_enabled = False
-        self.selection_mode = 'standard'
+
+        self.active_area = 'paint_area'
 
         self.mapping = Mapping(1920, 1080)
         print("ASSERTED: (99.44448537537721, 847.1789582258892)")
@@ -532,10 +533,6 @@ class PaintApplication:
         print(self.paint_area_absolut_y_pos)
 
         self.mapping = Mapping(self.window.width(), self.window.height())
-
-
-        self.current_tool = None
-
 
         # stuff selected at startup
 
@@ -638,8 +635,6 @@ class PaintApplication:
 
         self.main_layout.addWidget(self.paint_area)
 
-
-
         self.btn_p.clicked.connect(self.paint_area.increase_pen_size)
         self.btn_m.clicked.connect(self.paint_area.decrease_pen_size)
 
@@ -652,6 +647,7 @@ class PaintApplication:
         for name, tool in self.tool_picker.btn_tools.items():
             tool.clicked.connect(partial(self.update_tool, tool.name))
 
+    # deprecated (can be deleted)
     def setup_config_ui(self):
 
         layout = QtWidgets.QVBoxLayout()
@@ -682,6 +678,7 @@ class PaintApplication:
 
         self.main_layout.addLayout(layout, 0, 0, 12, 2, Qt.Qt.AlignCenter)
 
+    # deprecated (can be deleted)
     def setup_paint_area_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
@@ -809,15 +806,15 @@ class PaintApplication:
 
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
-            if self.selection_mode == 'standard':
+            if self.active_area == 'paint_area':
                 self.paint_area.undo_drawing()
-            elif self.selection_mode == 'colorpicker':
+            elif self.active_area == 'color_picker':
                 # nextcolor
                 pass
         elif gesture.name == 'Swipe right':
-            if self.selection_mode == 'standard':
+            if self.active_area == 'paint_area':
                 self.paint_area.redo_drawing()
-            elif self.selection_mode == 'colorpicker':
+            elif self.active_area == 'color_picker':
                 # previouscolor
                 pass
         elif gesture.name == 'Circle clockwise':
