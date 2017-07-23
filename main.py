@@ -393,6 +393,81 @@ class Color(QtWidgets.QPushButton):
         self.setStyleSheet(self.css_not_highlighted)
 
 
+class ToolPicker(QtWidgets.QWidget):
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+        super().__init__()
+
+        self.tools = {
+            'DRAW': 0,
+            'SELECT': 1,
+            'MOVE': 2,
+            'ROTATE': 3
+        }
+
+        self.btn_tools = []
+
+        self.active_tool = 'DRAW'
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.setFixedWidth(self.width)
+        self.setFixedHeight(self.height)
+        layout = Qt.QHBoxLayout()
+
+        for name, color in self.tools.items():
+            btn = Tool(name)
+            btn.setFixedSize(self.height - 20, self.height - 20)
+
+            layout.addWidget(btn)
+            self.btn_tools.append(btn)
+        self.setLayout(layout)
+
+        for button in self.btn_tools:
+            # keep this order
+            button.clicked.connect(self.choose_tool)
+            button.clicked.connect(button.highlight)
+
+    def choose_tool(self):
+        for tool in self.btn_tools:
+            tool.unhighlight()
+
+        for tool in self.btn_tools:
+            if tool.highlighted:
+                self.active_tool = tool.name
+
+
+class Tool(QtWidgets.QPushButton):
+    def __init__(self, name):
+        super().__init__(name)
+        self.name = name
+        self.highlighted = False
+
+        self.css_highlighted = """
+            background-color: rgb(50, 50, 50, 0.6);
+            border: 5px solid green;
+            border-radius: 20px;
+        """
+
+        self.css_not_highlighted = """
+            background-color: rgb(50, 50, 50, 0.6);
+        """
+
+        self.setStyleSheet(self.css_not_highlighted)
+
+    def highlight(self):
+        self.highlighted = True
+        self.setStyleSheet(self.css_highlighted)
+
+    def unhighlight(self):
+        self.highlighted = False
+        self.setStyleSheet(self.css_not_highlighted)
+
+
 class PaintApplication:
     """
     Created by Fabian Schatz
@@ -490,11 +565,14 @@ class PaintApplication:
         # for debugging
         # top_line_widget.setStyleSheet("border: 5px solid green; border-radius: 20px;")
 
+
         self.shape_picker = ShapePicker(top_line_widget.width(), top_line_widget.height())
         self.shape_picker.setFixedHeight(top_line_widget.height())
         top_line_widget_layout.addWidget(self.shape_picker)
 
         self.color_picker = ColorPicker(top_line_widget.width(), top_line_widget.height())
+
+        self.tool_picker = ToolPicker(top_line_widget.width(), top_line_widget.height())
 
         btn_m = QtWidgets.QPushButton("-")
         btn_p = QtWidgets.QPushButton("+")
@@ -506,6 +584,8 @@ class PaintApplication:
         top_line_widget_layout.addWidget(btn_p)
 
         top_line_widget_layout.addWidget(self.color_picker)
+
+        top_line_widget_layout.addWidget(self.tool_picker)
 
         layout.addWidget(top_line_widget)
 
@@ -527,11 +607,17 @@ class PaintApplication:
         for color in self.color_picker.btn_colors:
             color.clicked.connect(partial(self.update_pen_color, color.color))
 
+        for tool in self.tool_picker.btn_tools:
+            tool.clicked.connect(partial(self.update_tool, tool.name))
+
     def update_shape(self, shape):
         self.paint_area.active_shape = shape
 
     def update_pen_color(self, color):
         self.paint_area.active_color = color
+
+    def update_tool(self, tool):
+        self.paint_area.active_tool = tool
 
     def connect_wm(self):
         addr = self.line_edit_br_addr.text()
