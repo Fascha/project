@@ -111,7 +111,7 @@ class PaintArea(QtWidgets.QWidget):
                 self.paint_objects.append(self.current_paint_object)
             elif self.active_shape == 'CIRCLE':
                 # self.current_paint_object = Pixel(ev.x(), ev.y(), self.active_color)
-                self.current_paint_object = Circles(ev.x(), ev.y(), self.active_color)
+                self.current_paint_object = Circles(color=self.active_color, size=self.active_size)
                 self.paint_objects.append(self.current_paint_object)
 
             self.update()
@@ -192,6 +192,13 @@ class PaintArea(QtWidgets.QWidget):
     def start_drawing(self):
         print("Started drawing")
         self.drawing = True
+
+        if self.active_shape == 'LINE':
+            self.current_paint_object = Line(color=self.active_color, size=self.active_size)
+            self.paint_objects.append(self.current_paint_object)
+        elif self.active_shape == 'CIRCLE':
+            self.current_paint_object = Circles(color=self.active_color, size=self.active_size)
+            self.paint_objects.append(self.current_paint_object)
 
     def stop_drawing(self):
         print("Stopped drawing")
@@ -567,9 +574,11 @@ class PaintApplication:
     def stop_recognition(self):
         print("Stopped Recognition Mode")
         self.recognition_mode_enabled = False
-        gesture = self.gesture_recognition.get_gesture(self.recognition_data)
-        # handle gesture etc
-        print(gesture)
+        if len(self.recognition_data) > 0:
+            gesture = self.gesture_recognition.get_gesture(self.recognition_data)
+            # handle gesture etc
+            print(gesture)
+            print(gesture.name)
 
         # self.set_recognition_mode(False)
 

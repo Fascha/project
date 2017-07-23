@@ -3,10 +3,8 @@ class Circles:
     Created by Fabian Schatz
     """
 
-    def __init__(self, x, y, color, size=2):
+    def __init__(self, color, size=2):
         self.points = []
-        self.x = x
-        self.y = y
         self.color = color
         self.size = size
 
