@@ -342,7 +342,7 @@ class ColorPicker(QtWidgets.QWidget):
             'BLACK': (0, 0, 0),
         }
 
-        self.btn_colors = []
+        self.btn_colors = {}
 
         self.active_color = None
 
@@ -359,17 +359,17 @@ class ColorPicker(QtWidgets.QWidget):
             btn.setFixedSize(self.height - 20, self.height - 20)
 
             layout.addWidget(btn)
-            self.btn_colors.append(btn)
+            self.btn_colors[name] = btn
         self.setLayout(layout)
 
-        for button in self.btn_colors:
+        for name, button in self.btn_colors.items():
             # keep this order
             button.clicked.connect(self.choose_color)
             button.clicked.connect(button.highlight)
 
     def choose_color(self):
         print("CHOOSE COLOR")
-        for button in self.btn_colors:
+        for name, button in self.btn_colors.items():
             button.unhighlight()
 
 
@@ -426,7 +426,7 @@ class ToolPicker(QtWidgets.QWidget):
             'ROTATE': 3
         }
 
-        self.btn_tools = []
+        self.btn_tools = {}
 
         self.active_tool = 'DRAW'
 
@@ -442,19 +442,19 @@ class ToolPicker(QtWidgets.QWidget):
             btn.setFixedSize(self.height - 20, self.height - 20)
 
             layout.addWidget(btn)
-            self.btn_tools.append(btn)
+            self.btn_tools[name] = btn
         self.setLayout(layout)
 
-        for button in self.btn_tools:
+        for name, button in self.btn_tools.items():
             # keep this order
             button.clicked.connect(self.choose_tool)
             button.clicked.connect(button.highlight)
 
     def choose_tool(self):
-        for tool in self.btn_tools:
+        for name, tool in self.btn_tools.items():
             tool.unhighlight()
 
-        for tool in self.btn_tools:
+        for name, tool in self.btn_tools.items():
             if tool.highlighted:
                 self.active_tool = tool.name
 
@@ -530,6 +530,16 @@ class PaintApplication:
         print(self.paint_area_absolut_y_pos)
 
         self.mapping = Mapping(self.window.width(), self.window.height())
+
+
+        self.current_tool = None
+
+
+        # stuff selected at startup
+
+        self.tool_picker.btn_tools['DRAW'].click()
+        self.shape_picker.btn_shapes['LINE'].click()
+        self.color_picker.btn_colors['RED'].click()
 
         self.window.show()
 
@@ -634,14 +644,11 @@ class PaintApplication:
         for name, btn in self.shape_picker.btn_shapes.items():
             btn.clicked.connect(partial(self.update_shape, btn.name))
 
-        for color in self.color_picker.btn_colors:
+        for name, color in self.color_picker.btn_colors.items():
             color.clicked.connect(partial(self.update_pen_color, color.color))
 
-        for tool in self.tool_picker.btn_tools:
+        for name, tool in self.tool_picker.btn_tools.items():
             tool.clicked.connect(partial(self.update_tool, tool.name))
-
-
-
 
     def setup_config_ui(self):
 
@@ -802,7 +809,7 @@ class PaintApplication:
         if gesture.name == 'Swipe left':
             if self.selection_mode == 'standard':
                 self.paint_area.undo_drawing()
-            elif self.selecion_mode == 'colorpicker':
+            elif self.selection_mode == 'colorpicker':
                 # nextcolor
                 pass
         elif gesture.name == 'Swipe right':
