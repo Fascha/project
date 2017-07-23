@@ -246,7 +246,7 @@ class PaintArea(QtWidgets.QWidget):
 
 class ShapePicker(QtWidgets.QWidget):
 
-    def __init__(self, width, height):
+    def __init__(self, width=None, height=None):
         self.width = width
         self.height = height
 
@@ -266,13 +266,15 @@ class ShapePicker(QtWidgets.QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setFixedWidth(self.width)
-        self.setFixedHeight(self.height)
+        if self.width and self.height:
+            self.setFixedWidth(self.width)
+            self.setFixedHeight(self.height)
         layout = Qt.QHBoxLayout()
 
         for name, color in self.shapes.items():
             btn = Shape(name)
-            btn.setFixedSize(self.height - 20, self.height - 20)
+            if self.width and self.height:
+                btn.setFixedSize(self.height - 20, self.height - 20)
 
             layout.addWidget(btn)
             # self.btn_shapes.append(btn)
@@ -300,13 +302,14 @@ class Shape(QtWidgets.QPushButton):
         self.highlighted = False
 
         self.css_highlighted = """
-            background-color: rgb(50, 50, 50, 0.6);
+            background-color: rgb(250, 250, 250);
             border: 5px solid green;
             border-radius: 20px;
         """
 
         self.css_not_highlighted = """
-            background-color: rgb(50, 50, 50, 0.6);
+            background-color: rgb(150, 150, 150);
+            border-radius: 20px;
         """
 
         self.setStyleSheet(self.css_not_highlighted)
@@ -390,6 +393,7 @@ class Color(QtWidgets.QPushButton):
         self.css_not_highlighted = """
             background-color: rgb(%d, %d, %d);
             color: white;
+            border-radius: 20px;
         """ % (r, g, b)
 
         self.setStyleSheet(self.css_not_highlighted)
@@ -462,13 +466,14 @@ class Tool(QtWidgets.QPushButton):
         self.highlighted = False
 
         self.css_highlighted = """
-            background-color: rgb(50, 50, 50, 0.6);
+            background-color: rgb(250, 250, 250);
             border: 5px solid green;
             border-radius: 20px;
         """
 
         self.css_not_highlighted = """
-            background-color: rgb(50, 50, 50, 0.6);
+            background-color: rgb(150, 150, 150,);
+            border-radius: 20px;
         """
 
         self.setStyleSheet(self.css_not_highlighted)
@@ -505,25 +510,25 @@ class PaintApplication:
 
         self.setup_ui()
 
-        self.gesture_recognition = GestureRecognition()
-        self.recognition_data = []
-        self.recognition_mode_enabled = False
-
-        self.mapping = Mapping(1920, 1080)
-        print("ASSERTED: (99.44448537537721, 847.1789582258892)")
-        test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
-        self.mapping.calculate_source_to_dest(test_data)
-        print("RESULT: ", self.mapping.get_pointing_point())
-
-        # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
-
-        self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
-        self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
-
-        print(self.paint_area_absolut_x_pos)
-        print(self.paint_area_absolut_y_pos)
-
-        self.mapping = Mapping(self.window.width(), self.window.height())
+        # self.gesture_recognition = GestureRecognition()
+        # self.recognition_data = []
+        # self.recognition_mode_enabled = False
+        #
+        # self.mapping = Mapping(1920, 1080)
+        # print("ASSERTED: (99.44448537537721, 847.1789582258892)")
+        # test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
+        # self.mapping.calculate_source_to_dest(test_data)
+        # print("RESULT: ", self.mapping.get_pointing_point())
+        #
+        # # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+        #
+        # self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
+        # self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
+        #
+        # print(self.paint_area_absolut_x_pos)
+        # print(self.paint_area_absolut_y_pos)
+        #
+        # self.mapping = Mapping(self.window.width(), self.window.height())
 
         self.window.show()
 
@@ -537,11 +542,105 @@ class PaintApplication:
 
         print("WINDOWS SIZE AFTER MAX: ", self.window.size())
 
-        self.main_layout = QtWidgets.QGridLayout()
+        # self.main_layout = QtWidgets.QGridLayout()
+        # self.window.setLayout(self.main_layout)
+        #
+        # self.setup_config_ui()
+        # self.setup_paint_area_ui()
+
+        self.main_layout = QtWidgets.QHBoxLayout()
         self.window.setLayout(self.main_layout)
 
-        self.setup_config_ui()
-        self.setup_paint_area_ui()
+        self.setup_left_column(2*self.window.width()/12)
+        self.setup_paint_area(10*self.window.width()/12, self.window.height())
+
+    def setup_left_column(self, width):
+        """
+            - shapepicker
+
+            - colorpicker
+
+            - toolpicker
+
+            - wiimote:
+                - lineedit for mac addr
+                - button to connect
+                - status of connection
+
+            - count ir makers
+
+        """
+
+        left_colum_widget = QtWidgets.QWidget()
+        left_colum_widget.setFixedWidth(width)
+        layout = QtWidgets.QVBoxLayout()
+        left_colum_widget.setLayout(layout)
+
+        self.shape_picker = ShapePicker(width, 100)
+        layout.addWidget(self.shape_picker)
+
+        self.color_picker = ColorPicker(width, 100)
+        layout.addWidget(self.color_picker)
+
+        self.tool_picker = ToolPicker(width, 100)
+        layout.addWidget(self.tool_picker)
+
+        self.btn_m = QtWidgets.QPushButton("-")
+        self.btn_p = QtWidgets.QPushButton("+")
+
+        layout.addWidget(self.btn_m)
+        layout.addWidget(self.btn_p)
+
+        layout.addWidget(QtWidgets.QLabel("WiiMote connection status"))
+        self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
+        self.label_wm_connection_status.setAlignment(Qt.Qt.AlignCenter)
+        self.label_wm_connection_status.setFixedHeight(100)
+        self.fill_label_background(self.label_wm_connection_status, self.RED)
+        layout.addWidget(self.label_wm_connection_status)
+
+        layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
+        self.line_edit_br_addr = QtWidgets.QLineEdit()
+        self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
+        # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
+        layout.addWidget(self.line_edit_br_addr)
+        self.button_connect = QtWidgets.QPushButton("Connect")
+        self.button_connect.clicked.connect(self.connect_wm)
+        layout.addWidget(self.button_connect)
+
+        layout.addWidget(QtWidgets.QLabel("Number of tracked IR-Markers:"))
+        self.num_ir_objects = QtWidgets.QLabel("0")
+        font = QtGui.QFont("Helvetica", 32)
+        self.num_ir_objects.setFont(font)
+        self.num_ir_objects.setFixedHeight(300)
+        layout.addWidget(self.num_ir_objects)
+
+
+        # needed so the elements do not stretch the whole hieght and therefore have huge white gaps inbetween
+        layout.addStretch()
+
+        self.main_layout.addWidget(left_colum_widget)
+
+    def setup_paint_area(self, width, height):
+        self.paint_area = PaintArea(width=width, height=height)
+
+        self.main_layout.addWidget(self.paint_area)
+
+
+
+        self.btn_p.clicked.connect(self.paint_area.increase_pen_size)
+        self.btn_m.clicked.connect(self.paint_area.decrease_pen_size)
+
+        for name, btn in self.shape_picker.btn_shapes.items():
+            btn.clicked.connect(partial(self.update_shape, btn.name))
+
+        for color in self.color_picker.btn_colors:
+            color.clicked.connect(partial(self.update_pen_color, color.color))
+
+        for tool in self.tool_picker.btn_tools:
+            tool.clicked.connect(partial(self.update_tool, tool.name))
+
+
+
 
     def setup_config_ui(self):
 
