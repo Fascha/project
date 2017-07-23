@@ -1,3 +1,19 @@
+class Circles:
+    """
+    Created by Fabian Schatz
+    """
+
+    def __init__(self, x, y, color, size=2):
+        self.points = []
+        self.x = x
+        self.y = y
+        self.color = color
+        self.size = size
+
+    def add_point(self, x, y):
+        self.points.append((x, y))
+
+
 class Pixel:
     """
     Created by Fabian Schatz
