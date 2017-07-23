@@ -1,5 +1,5 @@
 import lib.wiimote as wiimote
-from lib.gestures import DollarRecognizer
+from lib.gestures import GestureRecognition
 from lib.wiimote_mapping import Mapping
 import sys
 from functools import partial
@@ -32,37 +32,6 @@ TODO:
         => matrize jedes mal neu berechnen
 
 """
-
-
-# class GestureRecognizer:
-#     """
-#     Created by Fabian Schatz & Marco Jakob
-#     """
-#
-#     """
-#     $1
-#     - resample (128 samples per gesture recording)
-#     - rotate
-#     - calc distance to check which gesture
-#
-#
-#     widget aktuelle geste anzeigen
-#
-#     übersicht über alle gesten
-#     """
-#
-#     def __init__(self):
-#         self.current_recording = []
-#         self.recognition_mode = False
-#         pass
-
-
-class Command:
-    def undo(self):
-        pass
-
-    def redo(self):
-        pass
 
 
 class UndoHandler(QtWidgets.QUndoCommand):
@@ -101,7 +70,7 @@ class PaintArea(QtWidgets.QWidget):
 
         self.grid = True
         self.recognition_mode = False
-        self.points = []
+        # self.points = []
 
         self.current_mode = 'LINE'
 
@@ -141,7 +110,9 @@ class PaintArea(QtWidgets.QWidget):
                 self.current_paint_object.add_point(ev.x(), ev.y())
                 self.paint_objects.append(self.current_paint_object)
             elif self.active_shape == 'CIRCLE':
-                self.current_paint_object = Pixel(ev.x(), ev.y(), self.active_color)
+                # self.current_paint_object = Pixel(ev.x(), ev.y(), self.active_color)
+                self.current_paint_object = Circles(ev.x(), ev.y(), self.active_color)
+                self.paint_objects.append(self.current_paint_object)
 
             self.update()
         elif ev.button() == QtCore.Qt.RightButton:
@@ -162,7 +133,8 @@ class PaintArea(QtWidgets.QWidget):
             if self.active_shape == 'LINE':
                 self.current_paint_object.add_point(ev.x(), ev.y())
             elif self.active_shape == 'CIRCLE':
-                self.paint_objects.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
+                # self.paint_objects.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
+                self.current_paint_object.add_point(ev.x(), ev.y())
 
             self.update()
 
@@ -180,19 +152,19 @@ class PaintArea(QtWidgets.QWidget):
         # qp.drawPolyline(self.poly(self.points))
 
         for elem in self.paint_objects:
+            pen = QtGui.QPen()
+            pen.setColor(elem.color)
+            pen.setWidth(elem.size)
+            qp.setPen(pen)
             if type(elem) == Line:
-                line_pen = QtGui.QPen()
-                line_pen.setColor(elem.color)
-                line_pen.setWidth(elem.size)
-                qp.setPen(line_pen)
                 qp.drawPolyline(self.poly(elem.points))
 
             elif type(elem) == Pixel:
-                pixel_pen = QtGui.QPen()
-                pixel_pen.setColor(elem.color)
-                pixel_pen.setWidth(elem.size)
-                qp.setPen(pixel_pen)
                 qp.drawEllipse(elem.x, elem.y, elem.size, elem.size)
+
+            elif type(elem) == Circles:
+                for circle in elem.points:
+                    qp.drawEllipse(circle[0], circle[1], elem.size, elem.size)
 
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
@@ -210,9 +182,12 @@ class PaintArea(QtWidgets.QWidget):
         qp.end()
 
     def add_point(self, x, y):
-        if self.drawing:
-            self.points.append((x, y))
-            self.update()
+        self.current_paint_object.add_point(x, y)
+        self.update()
+
+        # if self.drawing:
+        #     self.points.append((x, y))
+        #     self.update()
 
     def start_drawing(self):
         print("Started drawing")
@@ -406,8 +381,8 @@ class PaintApplication:
     Created by Fabian Schatz
     """
 
-    WINDOW_WIDTH = 1200
-    WINDOW_HEIGHT = 600
+    # WINDOW_WIDTH = 1200
+    # WINDOW_HEIGHT = 600
 
     name_hard = 'Nintendo RVL-CNT-01-TR'
 
@@ -416,8 +391,6 @@ class PaintApplication:
     YELLOW = QtGui.QColor(255, 255, 0)
     GRAY = QtGui.QColor(100, 100, 100)
     BLACK = QtGui.QColor(0, 0, 0)
-    recognition_mode = False
-    current_recording = []
 
     def __init__(self):
 
@@ -427,30 +400,21 @@ class PaintApplication:
         self.screen_height = screen.height()
         self.wm = None
 
-        self.d_one = DollarRecognizer()
-
         self.setup_ui()
+
+        self.gesture_recognition = GestureRecognition()
+        self.recognition_data = []
+        self.recognition_mode_enabled = False
 
         self.mapping = Mapping(1920, 1080)
         print("ASSERTED: (99.44448537537721, 847.1789582258892)")
-        testdata = [(500, 300), (950, 300), (900, 700), (450, 690)]
-        self.mapping.calculate_source_to_dest(testdata)
+        test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
+        self.mapping.calculate_source_to_dest(test_data)
         print("RESULT: ", self.mapping.get_pointing_point())
 
         self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
 
         self.window.show()
-
-    def set_recognition_mode(self, value):
-        # catch some wrong paramaters
-        if value:
-            self.current_recording = []
-            self.recognition_mode = True
-        else:
-            self.recognition_mode = False
-            print(self.current_recording)
-            # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
-            print(self.d_one.dollar_recognize(self.current_recording)[0])
 
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
@@ -549,15 +513,6 @@ class PaintApplication:
         for color in self.color_picker.btn_colors:
             color.clicked.connect(partial(self.update_pen_color, color.color))
 
-        # corner points
-        self.paint_area.points.append(Pixel(0, 0, self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(self.paint_area.width()/2, self.paint_area.height()/2,
-                                            self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(self.paint_area.width(), 0, self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(self.paint_area.width(), self.paint_area.height(),
-                                            self.paint_area.active_color, 50))
-        self.paint_area.points.append(Pixel(0, self.paint_area.height(), self.paint_area.active_color, 50))
-
     def update_shape(self, shape):
         self.paint_area.active_shape = shape
 
@@ -605,11 +560,18 @@ class PaintApplication:
 
     def start_recognition(self):
         print("Started Recognition Mode")
-        self.set_recognition_mode(True)
+        self.recognition_mode_enabled = True
+        self.recognition_data = []
+        # self.set_recognition_mode(True)
 
     def stop_recognition(self):
         print("Stopped Recognition Mode")
-        self.set_recognition_mode(False)
+        self.recognition_mode_enabled = False
+        gesture = self.gesture_recognition.get_gesture(self.recognition_data)
+        # handle gesture etc
+        print(gesture)
+
+        # self.set_recognition_mode(False)
 
     def handle_ir_data(self, ir_data):
 
@@ -644,16 +606,18 @@ class PaintApplication:
                 mapped_data = self.mapping.get_pointing_point()
 
                 if self.paint_area.drawing:
-                    self.paint_area.paint_objects.append(Pixel(mapped_data[0], mapped_data[1],
-                                                               self.paint_area.active_color, 30))
+                    # self.paint_area.paint_objects.append(Pixel(mapped_data[0], mapped_data[1],
+                    #                                            self.paint_area.active_color, 30))
+
+                    # self.paint_area.add_point(mapped_data[0], mapped_data[1])
+                    self.paint_area.add_point(*mapped_data)
 
                 self.paint_area.current_cursor_point = mapped_data
 
-                self.paint_area.update()
+                if self.recognition_mode_enabled:
+                    self.recognition_data.append(mapped_data)
 
-        if self.recognition_mode:
-            coord = self.paint_area.current_cursor_point
-            self.current_recording.append(coord)
+                self.paint_area.update()
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
