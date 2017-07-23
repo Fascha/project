@@ -790,6 +790,9 @@ class PaintApplication:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.start_drawing()
                     elif self.tool_picker.active_tool == 'SELECT':
+                        if len(self.selected_objects) > 0:
+                            for obj in self.selected_objects:
+                                obj.selected = False
                         self.selection_mode_enabled = True
                         self.select_area_start_pos = None
                         self.select_area_end_pos = None
