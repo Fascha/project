@@ -243,7 +243,9 @@ class ShapePicker(QtWidgets.QWidget):
             'LINE': 1
         }
 
-        self.btn_shapes = []
+        # self.btn_shapes = []
+
+        self.btn_shapes = {}
 
         self.active_shape = 'LINE'
 
@@ -259,21 +261,22 @@ class ShapePicker(QtWidgets.QWidget):
             btn.setFixedSize(self.height - 20, self.height - 20)
 
             layout.addWidget(btn)
-            self.btn_shapes.append(btn)
+            # self.btn_shapes.append(btn)
+            self.btn_shapes[name] = btn
         self.setLayout(layout)
 
-        for button in self.btn_shapes:
+        for name, button in self.btn_shapes.items():
             # keep this order
             button.clicked.connect(self.choose_shape)
             button.clicked.connect(button.highlight)
 
     def choose_shape(self):
-        for shape in self.btn_shapes:
-            shape.unhighlight()
+        for name, btn in self.btn_shapes.items():
+            btn.unhighlight()
 
-        for shape in self.btn_shapes:
-            if shape.highlighted:
-                self.active_shape = shape.name
+        for name, btn in self.btn_shapes.items():
+            if btn.highlighted:
+                self.active_shape = btn.name
 
 
 class Shape(QtWidgets.QPushButton):
@@ -518,8 +521,8 @@ class PaintApplication:
         btn_p.clicked.connect(self.paint_area.increase_pen_size)
         btn_m.clicked.connect(self.paint_area.decrease_pen_size)
 
-        for shape in self.shape_picker.btn_shapes:
-            shape.clicked.connect(partial(self.update_shape, shape.name))
+        for name, btn in self.shape_picker.btn_shapes.items():
+            btn.clicked.connect(partial(self.update_shape, btn.name))
 
         for color in self.color_picker.btn_colors:
             color.clicked.connect(partial(self.update_pen_color, color.color))
@@ -583,8 +586,15 @@ class PaintApplication:
             # handle gesture etc
             print(gesture)
             print(gesture.name)
+            self.handle_gesture(gesture)
 
         # self.set_recognition_mode(False)
+
+    def handle_gesture(self, gesture):
+        if gesture.name == 'Swipe left':
+            self.paint_area.undo_drawing()
+        elif gesture.name == 'Circle clockwise':
+            self.shape_picker.btn_shapes['CIRCLE'].click()
 
     def handle_ir_data(self, ir_data):
 
