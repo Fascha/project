@@ -11,22 +11,27 @@ TODO:
 
     - mapping from 4 IR sensors to display pixels ---- DONE ----
 
-    - reconstructure UI and maximise painting area
+    - reconstructure UI and maximise painting area ---- DONE ----
 
     - at least 3 interaction techniques
         - selection
         - copy(cut) & paste
         - load & save
 
+    - gesture recognition
+        - recognize gesture ---- DONE ----
+        - save new gesture
+
+    - DEMO RELEASE IN GITHUB
 
     - change brush/pen/color with gesture
         - gesture for color + selection with left/right gesture
         - gesture for brush size + in- or decrease with left/right gesture
         - different pen: shape dependent on rotation of wiimote
 
-    mapToGlobal
+    - mapToGlobal
 
-    wiimote ircam: 1024x768
+    wiimote ircam: 1024x768 ---- DONE ----
         mitte ist bei width/2 und height/2
         => 512/384 in die matrize reinschmeisen und dann bekommen wir koordinaten wo wir hinzeigen
         => matrize jedes mal neu berechnen
@@ -203,6 +208,8 @@ class PaintArea(QtWidgets.QWidget):
     def stop_drawing(self):
         print("Stopped drawing")
         self.drawing = False
+        self.stack.push(UndoHandler(self.paint_objects))
+        self.update()
 
     # Undo function to remove last step from the stack
     def undo_drawing(self):
@@ -387,9 +394,6 @@ class PaintApplication:
     """
     Created by Fabian Schatz
     """
-
-    # WINDOW_WIDTH = 1200
-    # WINDOW_HEIGHT = 600
 
     name_hard = 'Nintendo RVL-CNT-01-TR'
 
@@ -630,7 +634,6 @@ class PaintApplication:
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
-
         palette = label.palette()
         palette.setColor(label.backgroundRole(), color)
         label.setPalette(palette)
