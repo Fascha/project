@@ -5,6 +5,7 @@ import sys
 from functools import partial
 from lib.shapes import *
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
+from collections import OrderedDict
 
 """
 TODO:
@@ -334,13 +335,14 @@ class ColorPicker(QtWidgets.QWidget):
 
         super().__init__()
 
-        self.colors = {
-            'RED': (255, 0, 0),
-            'GREEN': (0, 255, 0),
-            'YELLOW': (255, 255, 0),
-            'GRAY': (100, 100, 100),
-            'BLACK': (0, 0, 0),
-        }
+        self.colors = OrderedDict([
+            ('RED', (255, 0, 0)),
+            ('GREEN', (0, 255, 0)),
+            ('BLUE', (0, 0, 255)),
+            ('YELLOW', (255, 255, 0)),
+            ('GRAY', (100, 100, 100)),
+            ('BLACK', (0, 0, 0)),
+        ])
 
         self.btn_colors = {}
 
