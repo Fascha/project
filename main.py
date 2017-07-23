@@ -510,25 +510,26 @@ class PaintApplication:
 
         self.setup_ui()
 
-        # self.gesture_recognition = GestureRecognition()
-        # self.recognition_data = []
-        # self.recognition_mode_enabled = False
-        #
-        # self.mapping = Mapping(1920, 1080)
-        # print("ASSERTED: (99.44448537537721, 847.1789582258892)")
-        # test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
-        # self.mapping.calculate_source_to_dest(test_data)
-        # print("RESULT: ", self.mapping.get_pointing_point())
-        #
-        # # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
-        #
-        # self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
-        # self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
-        #
-        # print(self.paint_area_absolut_x_pos)
-        # print(self.paint_area_absolut_y_pos)
-        #
-        # self.mapping = Mapping(self.window.width(), self.window.height())
+        self.gesture_recognition = GestureRecognition()
+        self.recognition_data = []
+        self.recognition_mode_enabled = False
+        self.selection_mode = 'standard'
+
+        self.mapping = Mapping(1920, 1080)
+        print("ASSERTED: (99.44448537537721, 847.1789582258892)")
+        test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
+        self.mapping.calculate_source_to_dest(test_data)
+        print("RESULT: ", self.mapping.get_pointing_point())
+
+        # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+
+        self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
+        self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
+
+        print(self.paint_area_absolut_x_pos)
+        print(self.paint_area_absolut_y_pos)
+
+        self.mapping = Mapping(self.window.width(), self.window.height())
 
         self.window.show()
 
