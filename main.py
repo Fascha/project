@@ -800,13 +800,26 @@ class PaintApplication:
 
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
-            self.paint_area.undo_drawing()
+            if self.selection_mode == 'standard':
+                self.paint_area.undo_drawing()
+            elif self.selecion_mode == 'colorpicker':
+                # nextcolor
+                pass
         elif gesture.name == 'Swipe right':
-            self.paint_area.redo_drawing()
+            if self.selection_mode == 'standard':
+                self.paint_area.redo_drawing()
+            elif self.selection_mode == 'colorpicker':
+                # previouscolor
+                pass
         elif gesture.name == 'Circle clockwise':
             self.shape_picker.btn_shapes['CIRCLE'].click()
         elif gesture.name == 'Circle counterclockwise':
             self.shape_picker.btn_shapes['LINE'].click()
+        elif gesture.name == 'C_shape':
+            self.selection_mode = 'colorpicker'
+        elif gesture.name == 'mirrored_C_shape':
+            self.selection_mode = 'standard'
+            print("standard")
 
     def handle_ir_data(self, ir_data):
 
