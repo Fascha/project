@@ -98,6 +98,8 @@ class PaintArea(QtWidgets.QWidget):
 
         self.current_paint_object = None
 
+        self.selection_rect = None
+
         # self.setMouseTracking(True)  # only get events when button is pressed
         self.init_ui()
 
@@ -198,6 +200,10 @@ class PaintArea(QtWidgets.QWidget):
 
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
+
+        if self.selection_rect:
+            qp.setPen(QtGui.QColor(2, 250, 250))
+            qp.drawRect(self.selection_rect)
 
         qp.end()
 
@@ -400,9 +406,6 @@ class Color(QtWidgets.QPushButton):
 
         self.setStyleSheet(self.css_not_highlighted)
 
-        # self.setFixedWidth(100)
-        # self.setFixedHeight(100)
-
     def highlight(self):
         print("HIGHLIGHT")
         self.highlighted = True
@@ -529,10 +532,11 @@ class PaintApplication:
         self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
         self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
 
-        print(self.paint_area_absolut_x_pos)
-        print(self.paint_area_absolut_y_pos)
-
         self.mapping = Mapping(self.window.width(), self.window.height())
+
+        self.select_area_start_pos = None
+        self.select_area_end_pos = None
+        self.selection_mode_enabled = False
 
         # stuff selected at startup
 
@@ -746,6 +750,7 @@ class PaintApplication:
 
     def update_tool(self, tool):
         self.paint_area.active_tool = tool
+        self.tool_picker.active_tool = tool
 
     def connect_wm(self):
         addr = self.line_edit_br_addr.text()
@@ -763,9 +768,19 @@ class PaintApplication:
         for button in buttons:
             if button[0] == 'A':
                 if button[1]:
-                    self.paint_area.start_drawing()
+                    if self.tool_picker.active_tool == 'DRAW':
+                        self.paint_area.start_drawing()
+                    elif self.tool_picker.active_tool == 'SELECT':
+                        self.selection_mode_enabled = True
+                        self.select_area_start_pos = None
+                        self.select_area_end_pos = None
                 elif not button[1]:
-                    self.paint_area.stop_drawing()
+                    if self.tool_picker.active_tool == 'DRAW':
+                        self.paint_area.stop_drawing()
+                    elif self.tool_picker.active_tool == 'SELECT':
+                        self.selection_mode_enabled = False
+                        self.paint_area.selection_rect = None
+                        self.get_selected_objects()
             elif button[0] == 'B':
                 if button[1]:
                     self.start_recognition()
@@ -785,6 +800,9 @@ class PaintApplication:
                 elif not button[1]:
                     # do something
                     print("Redo button not pressed")
+
+    def get_selected_objects(self):
+        pass
 
     def start_recognition(self):
         print("Started Recognition Mode")
@@ -875,12 +893,35 @@ class PaintApplication:
 
                 # handle toolpicker states /selected tool
 
+                if self.tool_picker.active_tool == 'SELECT' and self.selection_mode_enabled:
+                    if not self.select_area_start_pos:
+                        self.select_area_start_pos = mapped_data
 
+                    self.select_area_end_pos = mapped_data
 
-
-
+                    self.update_selection_rect()
 
                 self.paint_area.update()
+
+    def update_selection_rect(self):
+        if self.select_area_end_pos[0] > self.select_area_start_pos[0]:
+            tlx = self.select_area_start_pos[0]
+            brx = self.select_area_end_pos[0]
+        else:
+            tlx = self.select_area_end_pos[0]
+            brx = self.select_area_start_pos[0]
+
+        if self.select_area_end_pos[1] > self.select_area_start_pos[1]:
+            tly = self.select_area_start_pos[1]
+            bry = self.select_area_end_pos[1]
+        else:
+            tly = self.select_area_end_pos[1]
+            bry = self.select_area_start_pos[1]
+
+        tl = QtCore.QPoint(tlx, tly)
+        br = QtCore.QPoint(brx, bry)
+
+        self.paint_area.selection_rect = QtCore.QRect(tl, br)
 
     def fill_label_background(self, label, color):
         label.setAutoFillBackground(True)
