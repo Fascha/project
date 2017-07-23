@@ -1,5 +1,5 @@
 import lib.wiimote as wiimote
-import lib.gestures as gestures
+from lib.gestures import DollarRecognizer
 from lib.wiimote_mapping import Mapping
 import sys
 from functools import partial
@@ -34,27 +34,27 @@ TODO:
 """
 
 
-class GestureRecognizer:
-    """
-    Created by Fabian Schatz & Marco Jakob
-    """
-
-    """
-    $1
-    - resample (128 samples per gesture recording)
-    - rotate
-    - calc distance to check which gesture
-
-
-    widget aktuelle geste anzeigen
-
-    übersicht über alle gesten
-    """
-
-    def __init__(self):
-        self.current_recording = []
-        self.recognition_mode = False
-        pass
+# class GestureRecognizer:
+#     """
+#     Created by Fabian Schatz & Marco Jakob
+#     """
+#
+#     """
+#     $1
+#     - resample (128 samples per gesture recording)
+#     - rotate
+#     - calc distance to check which gesture
+#
+#
+#     widget aktuelle geste anzeigen
+#
+#     übersicht über alle gesten
+#     """
+#
+#     def __init__(self):
+#         self.current_recording = []
+#         self.recognition_mode = False
+#         pass
 
 
 class Command:
@@ -118,7 +118,7 @@ class PaintArea(QtWidgets.QWidget):
         self.active_size = 20
         self.active_shape = 'LINE'
 
-        # soem reference points for testing
+        # some reference points for testing
         self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
         self.paint_objects.append(Pixel(0, self.height(), self.active_color, self.active_size))
         self.paint_objects.append(Pixel(self.width(), 0, self.active_color, self.active_size))
@@ -427,7 +427,7 @@ class PaintApplication:
         self.screen_height = screen.height()
         self.wm = None
 
-        self.dOne = gestures.DollarRecognizer()
+        self.d_one = DollarRecognizer()
 
         self.setup_ui()
 
@@ -443,14 +443,14 @@ class PaintApplication:
 
     def set_recognition_mode(self, value):
         # catch some wrong paramaters
-        if value is True:
+        if value:
             self.current_recording = []
             self.recognition_mode = True
         else:
             self.recognition_mode = False
             print(self.current_recording)
             # self.dOne.AddTemplate(self.current_recording, "ColorGesture")
-            print(self.dOne.dollar_recognize(self.current_recording)[0])
+            print(self.d_one.dollar_recognize(self.current_recording)[0])
 
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
@@ -604,9 +604,11 @@ class PaintApplication:
                     print("Redo button not pressed")
 
     def start_recognition(self):
+        print("Started Recognition Mode")
         self.set_recognition_mode(True)
 
     def stop_recognition(self):
+        print("Stopped Recognition Mode")
         self.set_recognition_mode(False)
 
     def handle_ir_data(self, ir_data):
@@ -629,9 +631,12 @@ class PaintApplication:
 
             # calc matrix
             if x[0] < 1023:
-                sensor_coords = []
-                for ir_object in ir_data:
-                    sensor_coords.append((ir_object['x'], ir_object['y']))
+                # sensor_coords = []
+                # for ir_object in ir_data:
+                #     sensor_coords.append((ir_object['x'], ir_object['y']))
+
+                # more pythonic
+                sensor_coords = [(ir_object['x'], ir_object['y']) for ir_object in ir_data]
 
                 self.mapping.calculate_source_to_dest(sensor_coords)
 
