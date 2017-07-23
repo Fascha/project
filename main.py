@@ -593,8 +593,12 @@ class PaintApplication:
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
             self.paint_area.undo_drawing()
+        elif gesture.name == 'Swipe right':
+            self.paint_area.redo_drawing()
         elif gesture.name == 'Circle clockwise':
             self.shape_picker.btn_shapes['CIRCLE'].click()
+        elif gesture.name == 'Circle counterclockwise':
+            self.shape_picker.btn_shapes['LINE'].click()
 
     def handle_ir_data(self, ir_data):
 
