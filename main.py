@@ -110,15 +110,27 @@ class PaintArea(QtWidgets.QWidget):
         self.active_shape = 'LINE'
 
         # some reference points for testing
-        self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
-        self.paint_objects.append(Pixel(0, self.height(), self.active_color, self.active_size))
-        self.paint_objects.append(Pixel(self.width(), 0, self.active_color, self.active_size))
-        self.paint_objects.append(Pixel(self.width(), self.height(), self.active_color, self.active_size))
-        self.paint_objects.append(Pixel(self.width()/2, self.height()/2, self.active_color, self.active_size))
-        #     self.paint_area.points.append(Pixel(600, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(700, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(800, 100, self.paint_area.active_color, self.paint_area.active_size))
-        #     self.paint_area.points.append(Pixel(900, 100, self.paint_area.active_color, self.paint_area.active_size))
+        # self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
+        one = Circles(self.active_color, self.active_size)
+        one.add_point(0, 0)
+        self.paint_objects.append(one)
+
+        two = Circles(self.active_color, self.active_size)
+        two.add_point(self.width() - 2*self.active_size, 0)
+        self.paint_objects.append(two)
+
+        three = Circles(self.active_color, self.active_size)
+        three.add_point(self.width() - 2*self.active_size, self.height() - 2*self.active_size)
+        self.paint_objects.append(three)
+
+        four = Circles(self.active_color, self.active_size)
+        four.add_point(self.width()/2 - self.active_size, self.height()/2 - self.active_size)
+        self.paint_objects.append(four)
+
+        five = Circles(self.active_color, self.active_size)
+        five.add_point(0, self.height() - self.active_size*2)
+        self.paint_objects.append(five)
+
 
     def init_ui(self):
         self.setWindowTitle('Drawable')
@@ -175,7 +187,10 @@ class PaintArea(QtWidgets.QWidget):
 
         for elem in self.paint_objects:
             pen = QtGui.QPen()
-            pen.setColor(elem.color)
+            if elem.selected:
+                pen.setColor(QtGui.QColor(255, 255, 255))
+            else:
+                pen.setColor(elem.color)
             pen.setWidth(elem.size)
             qp.setPen(pen)
             if type(elem) == Line:
@@ -202,7 +217,7 @@ class PaintArea(QtWidgets.QWidget):
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
 
         if self.selection_rect:
-            qp.setPen(QtGui.QColor(2, 250, 250))
+            qp.setBrush(QtGui.QColor(2, 250, 250, 64))
             qp.drawRect(self.selection_rect)
 
         qp.end()
@@ -537,7 +552,11 @@ class PaintApplication:
         self.select_area_start_pos = None
         self.select_area_end_pos = None
         self.selection_mode_enabled = False
-
+        self.select_tlx = None
+        self.select_tly = None
+        self.select_brx = None
+        self.select_bry = None
+        self.selected_objects = []
         # stuff selected at startup
 
         self.tool_picker.btn_tools['DRAW'].click()
@@ -780,7 +799,7 @@ class PaintApplication:
                     elif self.tool_picker.active_tool == 'SELECT':
                         self.selection_mode_enabled = False
                         self.paint_area.selection_rect = None
-                        self.get_selected_objects()
+                        self.selected_objects = self.get_selected_objects()
             elif button[0] == 'B':
                 if button[1]:
                     self.start_recognition()
@@ -802,7 +821,17 @@ class PaintApplication:
                     print("Redo button not pressed")
 
     def get_selected_objects(self):
-        pass
+        selected_objects = []
+        for obj in self.paint_area.paint_objects:
+            for point in obj.points:
+                if point[0] > self.select_tlx and point[0] < self.select_brx:
+                    print("in x range")
+                    if point[1] > self.select_tly  and point[1] < self.select_bry:
+                        print("in x and y range so should be selected")
+                        selected_objects.append(obj)
+                        obj.selected = True
+
+        return selected_objects
 
     def start_recognition(self):
         print("Started Recognition Mode")
@@ -917,6 +946,11 @@ class PaintApplication:
         else:
             tly = self.select_area_end_pos[1]
             bry = self.select_area_start_pos[1]
+
+        self.select_tlx = tlx
+        self.select_tly = tly
+        self.select_brx = brx
+        self.select_bry = bry
 
         tl = QtCore.QPoint(tlx, tly)
         br = QtCore.QPoint(brx, bry)

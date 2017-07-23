@@ -7,6 +7,7 @@ class Circles:
         self.points = []
         self.color = color
         self.size = size
+        self.selected = False
 
     def add_point(self, x, y):
         self.points.append((x, y))
@@ -22,6 +23,7 @@ class Pixel:
         self.y = y
         self.color = color
         self.size = size
+        self.selected = False
 
 
 class Line:
@@ -33,6 +35,7 @@ class Line:
         self.points = []
         self.size = size
         self.color = color
+        self.selected = False
 
     def add_point(self, x, y):
         self.points.append((x, y))
