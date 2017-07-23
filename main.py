@@ -11,7 +11,21 @@ TODO:
 
     - mapping from 4 IR sensors to display pixels ---- DONE ----
 
-    - reconstructure UI and maximise painting area ---- DONE ----
+    - reconstructure UI and maximise painting area:
+        - elements:
+            - shapepicker
+
+            - colorpicker
+
+            - toolpicker
+
+            - wiimote:
+                - lineedit for mac addr
+                - button to connect
+                - status of connection
+
+            - count ir makers
+
 
     - at least 3 interaction techniques
         - selection
@@ -426,7 +440,15 @@ class PaintApplication:
         self.mapping.calculate_source_to_dest(test_data)
         print("RESULT: ", self.mapping.get_pointing_point())
 
-        self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+        # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
+
+        self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
+        self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
+
+        print(self.paint_area_absolut_x_pos)
+        print(self.paint_area_absolut_y_pos)
+
+        self.mapping = Mapping(self.window.width(), self.window.height())
 
         self.window.show()
 
@@ -616,10 +638,6 @@ class PaintApplication:
 
             # calc matrix
             if x[0] < 1023:
-                # sensor_coords = []
-                # for ir_object in ir_data:
-                #     sensor_coords.append((ir_object['x'], ir_object['y']))
-
                 # more pythonic
                 sensor_coords = [(ir_object['x'], ir_object['y']) for ir_object in ir_data]
 
@@ -628,17 +646,30 @@ class PaintApplication:
                 # map data
                 mapped_data = self.mapping.get_pointing_point()
 
-                if self.paint_area.drawing:
-                    # self.paint_area.paint_objects.append(Pixel(mapped_data[0], mapped_data[1],
-                    #                                            self.paint_area.active_color, 30))
 
-                    # self.paint_area.add_point(mapped_data[0], mapped_data[1])
-                    self.paint_area.add_point(*mapped_data)
+                ###############
+                ## from here on we can do everything with the calculated "cursor" pos
+                ###############
 
+                # setting cursor pos
                 self.paint_area.current_cursor_point = mapped_data
 
+                # checking if cursor position is in paint area
+                if mapped_data[0] > self.paint_area_absolut_x_pos and mapped_data[1] > self.paint_area_absolut_y_pos:
+                    if self.paint_area.drawing:
+                        # drawing into the paint area
+                        self.paint_area.add_point(*mapped_data)
+
+                # recording data for gesture recognition
                 if self.recognition_mode_enabled:
                     self.recognition_data.append(mapped_data)
+
+                # handle toolpicker states /selected tool
+
+
+
+
+
 
                 self.paint_area.update()
 
