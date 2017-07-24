@@ -2,6 +2,7 @@ import lib.wiimote as wiimote
 from lib.gestures import GestureRecognition
 from lib.wiimote_mapping import Mapping
 import sys
+import math
 from functools import partial
 from lib.shapes import *
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
@@ -116,21 +117,20 @@ class PaintArea(QtWidgets.QWidget):
         self.paint_objects.append(one)
 
         two = Circles(self.active_color, self.active_size)
-        two.add_point(self.width() - 2*self.active_size, 0)
+        two.add_point(self.width() - 2 * self.active_size, 0)
         self.paint_objects.append(two)
 
         three = Circles(self.active_color, self.active_size)
-        three.add_point(self.width() - 2*self.active_size, self.height() - 2*self.active_size)
+        three.add_point(self.width() - 2 * self.active_size, self.height() - 2 * self.active_size)
         self.paint_objects.append(three)
 
         four = Circles(self.active_color, self.active_size)
-        four.add_point(self.width()/2 - self.active_size, self.height()/2 - self.active_size)
+        four.add_point(self.width() / 2 - self.active_size, self.height() / 2 - self.active_size)
         self.paint_objects.append(four)
 
         five = Circles(self.active_color, self.active_size)
-        five.add_point(0, self.height() - self.active_size*2)
+        five.add_point(0, self.height() - self.active_size * 2)
         self.paint_objects.append(five)
-
 
     def init_ui(self):
         self.setWindowTitle('Drawable')
@@ -267,7 +267,6 @@ class PaintArea(QtWidgets.QWidget):
 
 
 class ShapePicker(QtWidgets.QWidget):
-
     def __init__(self, width=None, height=None):
         self.width = width
         self.height = height
@@ -432,7 +431,6 @@ class Color(QtWidgets.QPushButton):
 
 
 class ToolPicker(QtWidgets.QWidget):
-
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -552,11 +550,13 @@ class PaintApplication:
         self.select_area_start_pos = None
         self.select_area_end_pos = None
         self.selection_mode_enabled = False
+        self.dragging_mode = False
         self.select_tlx = None
         self.select_tly = None
         self.select_brx = None
         self.select_bry = None
         self.selected_objects = []
+        self.direction_list = []
         # stuff selected at startup
 
         self.tool_picker.btn_tools['DRAW'].click()
@@ -584,8 +584,8 @@ class PaintApplication:
         self.main_layout = QtWidgets.QHBoxLayout()
         self.window.setLayout(self.main_layout)
 
-        self.setup_left_column(2*self.window.width()/12)
-        self.setup_paint_area(10*self.window.width()/12, self.window.height())
+        self.setup_left_column(2 * self.window.width() / 12)
+        self.setup_paint_area(10 * self.window.width() / 12, self.window.height())
 
     def setup_left_column(self, width):
         """
@@ -647,7 +647,6 @@ class PaintApplication:
         self.num_ir_objects.setFixedHeight(300)
         layout.addWidget(self.num_ir_objects)
 
-
         # needed so the elements do not stretch the whole hieght and therefore have huge white gaps inbetween
         layout.addStretch()
 
@@ -706,7 +705,7 @@ class PaintApplication:
         layout = QtWidgets.QVBoxLayout()
 
         top_line_widget = QtWidgets.QWidget()
-        top_line_widget.setFixedHeight(1*self.screen_height/12)
+        top_line_widget.setFixedHeight(1 * self.screen_height / 12)
         top_line_widget_layout = QtWidgets.QHBoxLayout()
 
         top_line_widget_layout.setAlignment(Qt.Qt.AlignCenter)
@@ -740,10 +739,10 @@ class PaintApplication:
 
         layout.addWidget(top_line_widget)
 
-        self.paint_area = PaintArea(width=(11*self.screen_width/12), height=(11*self.screen_height/12))
+        self.paint_area = PaintArea(width=(11 * self.screen_width / 12), height=(11 * self.screen_height / 12))
 
-        self.paint_area.setFixedHeight(11*self.screen_height/12)
-        self.paint_area.setFixedWidth(11*self.screen_width/12)
+        self.paint_area.setFixedHeight(11 * self.screen_height / 12)
+        self.paint_area.setFixedWidth(11 * self.screen_width / 12)
 
         layout.addWidget(self.paint_area)
 
@@ -785,7 +784,7 @@ class PaintApplication:
 
     def handle_buttons(self, buttons):
         for button in buttons:
-            if button[0] == 'A':
+            if button[0] == 'A' and not self.dragging_mode:
                 if button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.start_drawing()
@@ -803,6 +802,12 @@ class PaintApplication:
                         self.selection_mode_enabled = False
                         self.paint_area.selection_rect = None
                         self.selected_objects = self.get_selected_objects()
+                        self.dragging_mode = True
+            elif button[0] == 'A' and self.dragging_mode:
+                if button[1]:
+                    pass
+                elif button[1]:
+                    self.dragging_mode = False
             elif button[0] == 'B':
                 if button[1]:
                     self.start_recognition()
@@ -823,13 +828,39 @@ class PaintApplication:
                     # do something
                     print("Redo button not pressed")
 
+    def moveObjects(self, objects):
+        movement_data = self.calculateDirection()
+        # print(self.direction_list)
+        # for i in range(len(objects[0].points)):
+        # objects[0].points[0][0] = objects[0].points[0][0] + 1.0
+        print(objects[0].points[0][1])
+        # print(objects[0].points)
+
+    def calculateDirection(self):
+        self.direction_list
+        x1 = self.direction_list[0][0]
+        y1 = self.direction_list[0][1]
+        x2 = self.direction_list[1][0]
+        y2 = self.direction_list[1][1]
+        distance = math.sqrt(math.pow((x2-x1),2)+math.pow((y2-y1),2))
+        if x1 < x2:
+            directionX = 1
+        else:
+            directionX = -1
+        if y1 < y2:
+            directionY = 1
+        else:
+            directionY = -1
+
+        return distance, directionX, directionY
+
     def get_selected_objects(self):
         selected_objects = []
         for obj in self.paint_area.paint_objects:
             for point in obj.points:
                 if point[0] > self.select_tlx and point[0] < self.select_brx:
                     print("in x range")
-                    if point[1] > self.select_tly  and point[1] < self.select_bry:
+                    if point[1] > self.select_tly and point[1] < self.select_bry:
                         print("in x and y range so should be selected")
                         selected_objects.append(obj)
                         obj.selected = True
@@ -852,7 +883,7 @@ class PaintApplication:
             print(gesture.name)
             self.handle_gesture(gesture)
 
-        # self.set_recognition_mode(False)
+            # self.set_recognition_mode(False)
 
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
@@ -905,7 +936,6 @@ class PaintApplication:
                 # map data
                 mapped_data = self.mapping.get_pointing_point()
 
-
                 ###############
                 ## from here on we can do everything with the calculated "cursor" pos
                 ###############
@@ -922,6 +952,16 @@ class PaintApplication:
                 # recording data for gesture recognition
                 if self.recognition_mode_enabled:
                     self.recognition_data.append(mapped_data)
+
+                if len(self.direction_list) < 2:
+                    self.direction_list.append(self.paint_area.current_cursor_point)
+                elif len(self.direction_list) == 2:
+                    self.direction_list[0] = self.direction_list[1]
+                    self.direction_list = self.direction_list[:1]
+                    self.direction_list.append(self.paint_area.current_cursor_point)
+
+                if self.dragging_mode:
+                    self.moveObjects(self.selected_objects)
 
                 # handle toolpicker states /selected tool
 
