@@ -41,7 +41,7 @@ TODO:
     - DEMO RELEASE IN GITHUB
 
     - change brush/pen/color with gesture
-        - gesture for color + selection with left/right gesture
+        - gesture for color + selection with left/right gesture ---- tbd Marco Peisker ----
         - gesture for brush size + in- or decrease with left/right gesture
         - different pen: shape dependent on rotation of wiimote
 
@@ -258,6 +258,15 @@ class PaintArea(QtWidgets.QWidget):
         self.stack.redo()
         self.update()
 
+    # Select previous color with left D-Pad key
+    def select_previous_color(self):
+        #print("active color ", self.active_color)
+        self.update()
+
+    # Select next color with right D-Pad key
+    def select_next_color(self):
+        self.update()
+
     def increase_pen_size(self):
         self.active_size += 1
 
@@ -367,6 +376,8 @@ class ColorPicker(QtWidgets.QWidget):
         self.btn_colors = {}
 
         self.active_color = None
+
+        self.active_color_elem = None
 
         self.init_ui()
 
@@ -827,6 +838,20 @@ class PaintApplication:
                 elif not button[1]:
                     # do something
                     print("Redo button not pressed")
+            # Select previous color with left button click
+            elif button[0] == 'Left':
+                if button[1]:
+                    self.paint_area.select_previous_color()
+                elif not button[1]:
+                    # do something
+                    print("Left button not pressed")
+            # Select next color with right button click
+            elif button[0] == 'Right':
+                if button[1]:
+                    self.paint_area.select_next_color()
+                elif not button[1]:
+                    # do something
+                    print("Right button not pressed")
 
     def moveObjects(self, objects):
         movement_data = self.calculateDirection()
