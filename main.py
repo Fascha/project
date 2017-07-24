@@ -813,12 +813,15 @@ class PaintApplication:
                         self.selection_mode_enabled = False
                         self.paint_area.selection_rect = None
                         self.selected_objects = self.get_selected_objects()
+                        self.tool_picker.btn_tools['MOVE'].click()
                         self.dragging_mode = True
             elif button[0] == 'A' and self.dragging_mode:
                 if button[1]:
                     pass
-                elif button[1]:
+                    # self.tool_picker.active_tool == 'MOVE'
+                elif not button[1]:
                     self.dragging_mode = False
+                    self.tool_picker.btn_tools['SELECT'].click()
             elif button[0] == 'B':
                 if button[1]:
                     self.start_recognition()
@@ -857,8 +860,8 @@ class PaintApplication:
         movement_data = self.calculateDirection()
         for i in range(len(objects)):
             for j in range(len(objects[i].points)):
-                newX = objects[i].points[j][0] + movement_data[0]*movement_data[2]
-                newY = objects[i].points[j][1] + movement_data[1]*movement_data[3]
+                newX = objects[i].points[j][0] + (movement_data[0]*movement_data[2])/10
+                newY = objects[i].points[j][1] + (movement_data[1]*movement_data[3])/10
                 objects[i].points[j] = (newX, newY)
 
     def calculateDirection(self):
