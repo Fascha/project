@@ -830,11 +830,11 @@ class PaintApplication:
 
     def moveObjects(self, objects):
         movement_data = self.calculateDirection()
-        # print(self.direction_list)
-        # for i in range(len(objects[0].points)):
-        # objects[0].points[0][0] = objects[0].points[0][0] + 1.0
-        print(objects[0].points[0][1])
-        # print(objects[0].points)
+        for i in range(len(objects)):
+            for j in range(len(objects[i].points)):
+                newX = objects[i].points[j][0] + movement_data[0]*movement_data[1]
+                newY = objects[i].points[j][1] + movement_data[0]*movement_data[2]
+                objects[i].points[j] = (newX, newY)
 
     def calculateDirection(self):
         self.direction_list
