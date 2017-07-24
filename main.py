@@ -832,8 +832,8 @@ class PaintApplication:
         movement_data = self.calculateDirection()
         for i in range(len(objects)):
             for j in range(len(objects[i].points)):
-                newX = objects[i].points[j][0] + movement_data[0]*movement_data[1]
-                newY = objects[i].points[j][1] + movement_data[0]*movement_data[2]
+                newX = objects[i].points[j][0] + movement_data[0]*movement_data[2]
+                newY = objects[i].points[j][1] + movement_data[1]*movement_data[3]
                 objects[i].points[j] = (newX, newY)
 
     def calculateDirection(self):
@@ -842,7 +842,8 @@ class PaintApplication:
         y1 = self.direction_list[0][1]
         x2 = self.direction_list[1][0]
         y2 = self.direction_list[1][1]
-        distance = math.sqrt(math.pow((x2-x1),2)+math.pow((y2-y1),2))
+        distX = math.sqrt(math.pow((x2-x1),2))
+        distY = math.sqrt(math.pow((y2-y1),2))
         if x1 < x2:
             directionX = 1
         else:
@@ -852,7 +853,7 @@ class PaintApplication:
         else:
             directionY = -1
 
-        return distance, directionX, directionY
+        return distX, distY, directionX, directionY
 
     def get_selected_objects(self):
         selected_objects = []
