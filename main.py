@@ -7,6 +7,7 @@ from functools import partial
 from lib.shapes import *
 from PyQt5 import Qt, QtGui, QtCore, QtWidgets
 from collections import OrderedDict
+import numpy as np
 
 """
 TODO:
@@ -791,6 +792,7 @@ class PaintApplication:
         self.label_wm_connection_status.setText("Connected to %s" % addr)
 
         self.wm.buttons.register_callback(self.handle_buttons)
+        self.wm.accelerometer.register_callback(self.handle_axis)
         self.wm.ir.register_callback(self.handle_ir_data)
 
     def handle_buttons(self, buttons):
@@ -936,6 +938,19 @@ class PaintApplication:
         elif gesture.name == 'mirrored_C_shape':
             self.selection_mode = 'standard'
             print("standard")
+
+    def handle_axis(self, accel_data):
+        x = accel_data[0]
+        z = accel_data[2]
+        diffx = (612 - x)/200
+        diffz = (z - 508)/200
+
+        normalX = [0, float(np.cos(diffx*np.pi))]
+        normalY = [0, float(np.sin(diffz*np.pi))]
+
+        angle = math.degrees(math.atan2(normalY[1],normalX[1]))
+
+        print(angle)
 
     def handle_ir_data(self, ir_data):
 
