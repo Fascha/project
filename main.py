@@ -110,7 +110,8 @@ class PaintArea(QtWidgets.QWidget):
         self.paint_objects = []
 
         self.current_paint_object = None
-
+        # self.rot = 45
+        # self.rotation_mode = False
         self.selection_rect = None
 
         # self.setMouseTracking(True)  # only get events when button is pressed
@@ -196,6 +197,8 @@ class PaintArea(QtWidgets.QWidget):
         # qp.setBrush(QtGui.QColor(20, 255, 190))
         # dots
         # qp.drawPolyline(self.poly(self.points))
+        # if self.rotation_mode:
+        #     qp.rotate(self.rot)
 
         for elem in self.paint_objects:
             pen = QtGui.QPen()
@@ -272,7 +275,7 @@ class PaintArea(QtWidgets.QWidget):
 
     # Select previous color with left D-Pad key
     def select_previous_color(self):
-        #print("active color ", self.active_color)
+        # print("active color ", self.active_color)
         self.update()
 
     # Select next color with right D-Pad key
@@ -541,6 +544,8 @@ class PaintApplication:
     GRAY = QtGui.QColor(100, 100, 100)
     BLACK = QtGui.QColor(0, 0, 0)
 
+    rot = 0
+
     def __init__(self):
 
         screen = QtWidgets.QDesktopWidget().screenGeometry(-1)
@@ -583,6 +588,9 @@ class PaintApplication:
 
         self.moving = False
         self.moving_coords = []
+
+        self.rotating = False
+        self.rotating_coords = []
 
         self.last_known_cursor_coord = None
 
@@ -662,8 +670,8 @@ class PaintApplication:
 
         layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
         self.line_edit_br_addr = QtWidgets.QLineEdit()
-        self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
-        # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
+        # self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
+        self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
         layout.addWidget(self.line_edit_br_addr)
         self.button_connect = QtWidgets.QPushButton("Connect")
         self.button_connect.clicked.connect(self.connect_wm)
@@ -828,6 +836,8 @@ class PaintApplication:
                         self.select_area_end_pos = None
                     elif self.tool_picker.active_tool == 'MOVE':
                         self.start_moving()
+                    elif self.tool_picker.active_tool == 'ROTATE':
+                        self.start_rotating()
                 elif not button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.stop_drawing()
@@ -839,6 +849,8 @@ class PaintApplication:
                         # self.tool_picker.btn_tools['MOVE'].click()
                         # self.dragging_mode = True
                         self.stop_moving()
+                    elif self.paint_area.active_tool == 'ROTATE':
+                        self.stop_rotating()
             # elif button[0] == 'A' and self.dragging_mode:
             #     if button[1]:
             #         pass
@@ -848,6 +860,7 @@ class PaintApplication:
             #         self.tool_picker.btn_tools['SELECT'].click()
             elif button[0] == 'B':
                 if button[1]:
+                    # self.paint_area.rotation_mode = False
                     self.start_recognition()
                 elif not button[1]:
                     self.stop_recognition()
@@ -902,14 +915,12 @@ class PaintApplication:
                     # do something
                     print("Right button not pressed")
 
-
-
     def moveObjects(self, objects):
         movement_data = self.calculateDirection()
         for i in range(len(objects)):
             for j in range(len(objects[i].points)):
-                newX = objects[i].points[j][0] + (movement_data[0]*movement_data[2])/10
-                newY = objects[i].points[j][1] + (movement_data[1]*movement_data[3])/10
+                newX = objects[i].points[j][0] + (movement_data[0] * movement_data[2]) / 10
+                newY = objects[i].points[j][1] + (movement_data[1] * movement_data[3]) / 10
                 objects[i].points[j] = (newX, newY)
 
     def calculateDirection(self):
@@ -918,8 +929,8 @@ class PaintApplication:
         y1 = self.direction_list[0][1]
         x2 = self.direction_list[1][0]
         y2 = self.direction_list[1][1]
-        distX = math.sqrt(math.pow((x2-x1),2))
-        distY = math.sqrt(math.pow((y2-y1),2))
+        distX = math.sqrt(math.pow((x2 - x1), 2))
+        distY = math.sqrt(math.pow((y2 - y1), 2))
         if x1 < x2:
             directionX = 1
         else:
@@ -971,6 +982,12 @@ class PaintApplication:
         self.moving = False
         self.moving_coords = []
 
+    def start_rotating(self):
+        print("Rotating")
+
+    def stop_rotating(self):
+        pass
+
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
             if self.active_area == 'paint_area':
@@ -988,24 +1005,30 @@ class PaintApplication:
             self.shape_picker.btn_shapes['CIRCLE'].click()
         elif gesture.name == 'Circle counterclockwise':
             self.shape_picker.btn_shapes['LINE'].click()
+        elif gesture.name == 'Swipe up':
+            self.tool_picker.btn_tools['ROTATE'].click()
+            # self.paint_area.rotation_mode = True
         elif gesture.name == 'C_shape':
             self.selection_mode = 'colorpicker'
         elif gesture.name == 'mirrored_C_shape':
+            self.tool_picker.btn_tools['DRAW'].click()
             self.selection_mode = 'standard'
             print("standard")
 
     def handle_axis(self, accel_data):
         x = accel_data[0]
         z = accel_data[2]
-        diffx = (612 - x)/200
-        diffz = (z - 508)/200
+        diffx = (612 - x) / 200
+        diffz = (z - 508) / 200
 
-        normalX = [0, float(np.cos(diffx*np.pi))]
-        normalY = [0, float(np.sin(diffz*np.pi))]
+        normalX = [0, float(np.cos(diffx * np.pi))]
+        normalY = [0, float(np.sin(diffz * np.pi))]
 
-        angle = math.degrees(math.atan2(normalY[1],normalX[1]))
+        angle = math.degrees(math.atan2(normalY[1], normalX[1]))
+        angle -= 90
+        self.paint_area.rot = angle
 
-        print(angle)
+        # print(angle)
 
     def handle_ir_data(self, ir_data):
 
@@ -1079,8 +1102,8 @@ class PaintApplication:
 
                 if self.tool_picker.active_tool == 'MOVE' and self.moving:
                     if self.last_known_cursor_coord:
-                        move_vector = (mapped_data[0] - self.last_known_cursor_coord[0], mapped_data[1] - self.last_known_cursor_coord[1])
-
+                        move_vector = (mapped_data[0] - self.last_known_cursor_coord[0],
+                                       mapped_data[1] - self.last_known_cursor_coord[1])
 
                         for elem in self.selected_objects:
                             elem.move(move_vector)
@@ -1089,17 +1112,19 @@ class PaintApplication:
                         print("SELECTED OBJECTS:", self.selected_objects)
 
                     self.last_known_cursor_coord = mapped_data
-                #     self.moving_coords.append(mapped_data)
-                #
-                #     if len(self.moving_coords) > 1:
-                #         p2 = self.moving_coords[-1]
-                #         p1 = self.moving_coords[-2]
-                #         move_vector = (p2[0] - p1[0], p2[1] - p1[1])
-                #
-                #         for obj in self.selected_objects:
-                #             obj.move(move_vector)
-                #
-                        # print(move_vector)
+                    #     self.moving_coords.append(mapped_data)
+                    #
+                    #     if len(self.moving_coords) > 1:
+                    #         p2 = self.moving_coords[-1]
+                    #         p1 = self.moving_coords[-2]
+                    #         move_vector = (p2[0] - p1[0], p2[1] - p1[1])
+                    #
+                    #         for obj in self.selected_objects:
+                    #             obj.move(move_vector)
+                    #
+                    # print(move_vector)
+                if self.tool_picker.active_tool == 'ROTATE' and self.rotating:
+                    pass
                 print(self.moving_coords)
                 self.paint_area.update()
 
