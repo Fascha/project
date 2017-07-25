@@ -12,6 +12,12 @@ class Circles:
     def add_point(self, x, y):
         self.points.append((x, y))
 
+    def move(self, vector):
+        moved_points = []
+        for point in self.points:
+            moved_points.append((point[0] + vector[0], point[1] + vector[1]))
+        self.points = moved_points
+
 
 class Pixel:
     """
@@ -39,6 +45,12 @@ class Line:
 
     def add_point(self, x, y):
         self.points.append((x, y))
+
+    def move(self, vector):
+        moved_points = []
+        for point in self.points:
+            moved_points.append((point[0] + vector[0], point[1] + vector[1]))
+        self.points = moved_points
 
 
 class Path:

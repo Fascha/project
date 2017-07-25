@@ -29,6 +29,17 @@ TODO:
             - count ir makers
 
 
+    - superclass for all shapes with:
+        - def add_point(x, y)
+        - def move(vector)
+
+
+    - rotate
+
+    - scale/zoom
+
+    - irmarkes@wiimote buttons
+
     - at least 3 interaction techniques
         - selection
         - copy(cut) & paste
@@ -568,6 +579,12 @@ class PaintApplication:
         self.select_bry = None
         self.selected_objects = []
         self.direction_list = []
+
+        self.moving = False
+        self.moving_coords = []
+
+        self.last_known_cursor_coord = None
+
         # stuff selected at startup
 
         self.tool_picker.btn_tools['DRAW'].click()
@@ -795,7 +812,8 @@ class PaintApplication:
 
     def handle_buttons(self, buttons):
         for button in buttons:
-            if button[0] == 'A' and not self.dragging_mode:
+            # if button[0] == 'A' and not self.dragging_mode:
+            if button[0] == 'A':
                 if button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.start_drawing()
@@ -806,6 +824,8 @@ class PaintApplication:
                         self.selection_mode_enabled = True
                         self.select_area_start_pos = None
                         self.select_area_end_pos = None
+                    elif self.tool_picker.active_tool == 'MOVE':
+                        self.start_moving()
                 elif not button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.stop_drawing()
@@ -813,15 +833,17 @@ class PaintApplication:
                         self.selection_mode_enabled = False
                         self.paint_area.selection_rect = None
                         self.selected_objects = self.get_selected_objects()
-                        self.tool_picker.btn_tools['MOVE'].click()
-                        self.dragging_mode = True
-            elif button[0] == 'A' and self.dragging_mode:
-                if button[1]:
-                    pass
-                    # self.tool_picker.active_tool == 'MOVE'
-                elif not button[1]:
-                    self.dragging_mode = False
-                    self.tool_picker.btn_tools['SELECT'].click()
+                    elif self.paint_area.active_tool == 'MOVE':
+                        # self.tool_picker.btn_tools['MOVE'].click()
+                        # self.dragging_mode = True
+                        self.stop_moving()
+            # elif button[0] == 'A' and self.dragging_mode:
+            #     if button[1]:
+            #         pass
+            #         self.tool_picker.active_tool == 'MOVE'
+            #     elif not button[1]:
+            #         self.dragging_mode = False
+            #         self.tool_picker.btn_tools['SELECT'].click()
             elif button[0] == 'B':
                 if button[1]:
                     self.start_recognition()
@@ -855,6 +877,30 @@ class PaintApplication:
                 elif not button[1]:
                     # do something
                     print("Right button not pressed")
+
+            elif button[0] == 'Up':
+                print("UP")
+                if button[1]:
+                    for elem in self.paint_area.paint_objects:
+                        elem.move((100, 100))
+                    self.paint_area.update()
+                elif not button[1]:
+                    # do something
+                    print("Right button not pressed")
+
+            elif button[0] == 'Down':
+                if button[1]:
+                    # self.paint_area.select_next_color()
+                    print("DOWN")
+                    for elem in self.paint_area.paint_objects:
+                        elem.move((-100, -100))
+
+                    self.paint_area.update()
+                elif not button[1]:
+                    # do something
+                    print("Right button not pressed")
+
+
 
     def moveObjects(self, objects):
         movement_data = self.calculateDirection()
@@ -893,6 +939,7 @@ class PaintApplication:
                         print("in x and y range so should be selected")
                         selected_objects.append(obj)
                         obj.selected = True
+                        break
 
         return selected_objects
 
@@ -913,6 +960,14 @@ class PaintApplication:
             self.handle_gesture(gesture)
 
             # self.set_recognition_mode(False)
+
+    def start_moving(self):
+        self.last_known_cursor_coord = None
+        self.moving = True
+
+    def stop_moving(self):
+        self.moving = False
+        self.moving_coords = []
 
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
@@ -945,6 +1000,10 @@ class PaintApplication:
         # rechts unten in ir cam: x=1023 y=0
 
         self.num_ir_objects.setText("%d" % len(ir_data))
+        led_list = [0, 0, 0, 0]
+        for x in range(len(ir_data)):
+            led_list[x] = 1
+        self.wm.set_leds(led_list)
 
         # for ir in ir_data:
         #     print("x: %d\ty: %d\tid: %d" %(ir['x'], ir['y'], ir['id']))
@@ -1000,8 +1059,33 @@ class PaintApplication:
 
                     self.select_area_end_pos = mapped_data
 
+                    print("SELECTED OBJECTS:", self.selected_objects)
                     self.update_selection_rect()
 
+                if self.tool_picker.active_tool == 'MOVE' and self.moving:
+                    if self.last_known_cursor_coord:
+                        move_vector = (mapped_data[0] - self.last_known_cursor_coord[0], mapped_data[1] - self.last_known_cursor_coord[1])
+
+
+                        for elem in self.selected_objects:
+                            elem.move(move_vector)
+
+                        print(move_vector)
+                        print("SELECTED OBJECTS:", self.selected_objects)
+
+                    self.last_known_cursor_coord = mapped_data
+                #     self.moving_coords.append(mapped_data)
+                #
+                #     if len(self.moving_coords) > 1:
+                #         p2 = self.moving_coords[-1]
+                #         p1 = self.moving_coords[-2]
+                #         move_vector = (p2[0] - p1[0], p2[1] - p1[1])
+                #
+                #         for obj in self.selected_objects:
+                #             obj.move(move_vector)
+                #
+                        # print(move_vector)
+                print(self.moving_coords)
                 self.paint_area.update()
 
     def update_selection_rect(self):
