@@ -9,6 +9,7 @@ from PyQt5 import Qt, QtGui, QtCore, QtWidgets
 from collections import OrderedDict
 import numpy as np
 
+
 """
 TODO:
 
@@ -145,6 +146,30 @@ class PaintArea(QtWidgets.QWidget):
         five.add_point(0, self.height() - self.active_size * 2)
         self.paint_objects.append(five)
 
+        self.setup_color_screen()
+
+    def setup_color_screen(self):
+        self.color_btns_overview = []
+        self.color_screen = False
+
+        num_x = 10
+        num_y = 10
+
+        btn_width = self.width()/num_x
+        btn_height = self.height()/num_y
+
+        for x in range(num_x):
+            for y in range(num_y):
+                # qp.setBrush(QtGui.QColor(25*x, 25*y, 25*(x+y) % 255))
+                # qp.drawRect(x*self.width()/10, y*self.height()/10, self.width()/10, self.height()/10)
+                btn = Color(25*x, 25*y, 25*(x+y) % 255, x=x*btn_width, y=y*btn_height)
+                btn.setFixedSize(btn_width, btn_height)
+                btn.clicked.connect(partial(self.set_active_color, btn.color))
+                self.color_btns_overview.append(btn)
+
+    def set_active_color(self, color):
+        self.active_color = color
+
     def init_ui(self):
         self.setWindowTitle('Drawable')
 
@@ -200,30 +225,36 @@ class PaintArea(QtWidgets.QWidget):
         # if self.rotation_mode:
         #     qp.rotate(self.rot)
 
-        for elem in self.paint_objects:
-            pen = QtGui.QPen()
-            if elem.selected:
-                pen.setColor(QtGui.QColor(255, 255, 255))
-            else:
-                pen.setColor(elem.color)
-            pen.setWidth(elem.size)
-            qp.setPen(pen)
-            if type(elem) == Line:
-                qp.drawPolyline(self.poly(elem.points))
+        if self.color_screen:
+            for elem in self.color_btns_overview:
+                qp.setBrush(elem.color)
+                qp.drawRect(elem.x, elem.y, self.width()/10, self.height()/10)
 
-            elif type(elem) == Pixel:
-                qp.drawEllipse(elem.x, elem.y, elem.size, elem.size)
+        else:
+            for elem in self.paint_objects:
+                pen = QtGui.QPen()
+                if elem.selected:
+                    pen.setColor(QtGui.QColor(255, 255, 255))
+                else:
+                    pen.setColor(elem.color)
+                pen.setWidth(elem.size)
+                qp.setPen(pen)
+                if type(elem) == Line:
+                    qp.drawPolyline(self.poly(elem.points))
 
-            elif type(elem) == Circles:
-                for circle in elem.points:
-                    qp.drawEllipse(circle[0], circle[1], elem.size, elem.size)
+                elif type(elem) == Pixel:
+                    qp.drawEllipse(elem.x, elem.y, elem.size, elem.size)
 
-        if self.grid:
-            qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
-            for x in range(0, self.width(), 20):
-                qp.drawLine(x, 0, x, self.height())
-            for y in range(0, self.height(), 20):
-                qp.drawLine(0, y, self.width(), y)
+                elif type(elem) == Circles:
+                    for circle in elem.points:
+                        qp.drawEllipse(circle[0], circle[1], elem.size, elem.size)
+
+            if self.grid:
+                qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
+                for x in range(0, self.width(), 20):
+                    qp.drawLine(x, 0, x, self.height())
+                for y in range(0, self.height(), 20):
+                    qp.drawLine(0, y, self.width(), y)
 
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
@@ -426,11 +457,13 @@ class Color(QtWidgets.QPushButton):
     Created by Fabian Schatz
     """
 
-    def __init__(self, r=0, g=0, b=0, name='TEST'):
+    def __init__(self, r=0, g=0, b=0, name='TEST', x=None, y=None):
         super().__init__()
         self.highlighted = False
         self.color = QtGui.QColor(r, g, b)
         self.name = name
+        self.x = x
+        self.y = y
 
         self.css_highlighted = """
             background-color: rgb(%d, %d, %d);
@@ -670,8 +703,8 @@ class PaintApplication:
 
         layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
         self.line_edit_br_addr = QtWidgets.QLineEdit()
-        # self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
-        self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
+        self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
+        # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
         layout.addWidget(self.line_edit_br_addr)
         self.button_connect = QtWidgets.QPushButton("Connect")
         self.button_connect.clicked.connect(self.connect_wm)
@@ -825,19 +858,38 @@ class PaintApplication:
             # if button[0] == 'A' and not self.dragging_mode:
             if button[0] == 'A':
                 if button[1]:
-                    if self.tool_picker.active_tool == 'DRAW':
-                        self.paint_area.start_drawing()
-                    elif self.tool_picker.active_tool == 'SELECT':
-                        if len(self.selected_objects) > 0:
-                            for obj in self.selected_objects:
-                                obj.selected = False
-                        self.selection_mode_enabled = True
-                        self.select_area_start_pos = None
-                        self.select_area_end_pos = None
-                    elif self.tool_picker.active_tool == 'MOVE':
-                        self.start_moving()
-                    elif self.tool_picker.active_tool == 'ROTATE':
-                        self.start_rotating()
+                    if self.paint_area.color_screen:
+                        self.paint_area.color_screen = False
+                        # for testing
+                        # invoke mouseclick at cursor pos shpudl do the trick
+                        for color in self.paint_area.color_btns_overview:
+                            print(color.x, color.y)
+                            print(color.width(), color.height())
+                            print(self.paint_area.current_cursor_point)
+                            if self.paint_area.current_cursor_point[0] >= color.x and self.paint_area.current_cursor_point[0] <= color.x+color.width():
+                                if self.paint_area.current_cursor_point[1] >= color.y and self.paint_area.current_cursor_point[1] <= color.y + color.height():
+                                    color.click()
+                                    print(color.name)
+                                    print("HELLOOO")
+                                    break
+                        self.paint_area.update()
+                    else:
+                        if self.tool_picker.active_tool == 'DRAW':
+			    if len(self.selected_objects) > 0:
+                                for obj in self.selected_objects:
+                                    obj.selected = False
+                            self.paint_area.start_drawing()
+                        elif self.tool_picker.active_tool == 'SELECT':
+                            if len(self.selected_objects) > 0:
+                                for obj in self.selected_objects:
+                                    obj.selected = False
+                            self.selection_mode_enabled = True
+                            self.select_area_start_pos = None
+                            self.select_area_end_pos = None
+                        elif self.tool_picker.active_tool == 'MOVE':
+                            self.start_moving()
+                        elif self.tool_picker.active_tool == 'ROTATE':
+                            self.start_rotating()
                 elif not button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.stop_drawing()
@@ -851,13 +903,6 @@ class PaintApplication:
                         self.stop_moving()
                     elif self.paint_area.active_tool == 'ROTATE':
                         self.stop_rotating()
-            # elif button[0] == 'A' and self.dragging_mode:
-            #     if button[1]:
-            #         pass
-            #         self.tool_picker.active_tool == 'MOVE'
-            #     elif not button[1]:
-            #         self.dragging_mode = False
-            #         self.tool_picker.btn_tools['SELECT'].click()
             elif button[0] == 'B':
                 if button[1]:
                     # self.paint_area.rotation_mode = False
@@ -892,7 +937,6 @@ class PaintApplication:
                 elif not button[1]:
                     # do something
                     print("Right button not pressed")
-
             elif button[0] == 'Up':
                 print("UP")
                 if button[1]:
@@ -902,18 +946,20 @@ class PaintApplication:
                 elif not button[1]:
                     # do something
                     print("Right button not pressed")
-
             elif button[0] == 'Down':
                 if button[1]:
                     # self.paint_area.select_next_color()
                     print("DOWN")
                     for elem in self.paint_area.paint_objects:
                         elem.move((-100, -100))
-
                     self.paint_area.update()
                 elif not button[1]:
                     # do something
                     print("Right button not pressed")
+            elif button[0] == 'One':
+                self.paint_area.increase_pen_size()
+            elif button[0] == 'Two':
+                self.paint_area.decrease_pen_size()
 
     def moveObjects(self, objects):
         movement_data = self.calculateDirection()
@@ -1008,8 +1054,14 @@ class PaintApplication:
         elif gesture.name == 'Swipe up':
             self.tool_picker.btn_tools['ROTATE'].click()
             # self.paint_area.rotation_mode = True
+        elif gesture.name == 'Swipe down':
+            self.tool_picker.btn_tools['SELECT'].click()
+        elif gesture.name == 'M_shape':
+            self.tool_picker.btn_tools['MOVE'].click()
         elif gesture.name == 'C_shape':
             self.selection_mode = 'colorpicker'
+            self.paint_area.color_screen = True
+            self.paint_area.update()
         elif gesture.name == 'mirrored_C_shape':
             self.tool_picker.btn_tools['DRAW'].click()
             self.selection_mode = 'standard'
@@ -1070,6 +1122,7 @@ class PaintApplication:
                 self.paint_area.current_cursor_point = mapped_data
 
                 # checking if cursor position is in paint area
+                # if can be removed when fullscreen
                 if mapped_data[0] > self.paint_area_absolut_x_pos and mapped_data[1] > self.paint_area_absolut_y_pos:
                     if self.paint_area.drawing:
                         # drawing into the paint area
@@ -1097,7 +1150,7 @@ class PaintApplication:
 
                     self.select_area_end_pos = mapped_data
 
-                    print("SELECTED OBJECTS:", self.selected_objects)
+                    # print("SELECTED OBJECTS:", self.selected_objects)
                     self.update_selection_rect()
 
                 if self.tool_picker.active_tool == 'MOVE' and self.moving:
@@ -1108,8 +1161,8 @@ class PaintApplication:
                         for elem in self.selected_objects:
                             elem.move(move_vector)
 
-                        print(move_vector)
-                        print("SELECTED OBJECTS:", self.selected_objects)
+                        # print(move_vector)
+                        # print("SELECTED OBJECTS:", self.selected_objects)
 
                     self.last_known_cursor_coord = mapped_data
                     #     self.moving_coords.append(mapped_data)
@@ -1125,7 +1178,8 @@ class PaintApplication:
                     # print(move_vector)
                 if self.tool_picker.active_tool == 'ROTATE' and self.rotating:
                     pass
-                print(self.moving_coords)
+
+                # print(self.moving_coords)
                 self.paint_area.update()
 
     def update_selection_rect(self):
