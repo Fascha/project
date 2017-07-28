@@ -65,6 +65,7 @@ TODO:
         => 512/384 in die matrize reinschmeisen und dann bekommen wir koordinaten wo wir hinzeigen
         => matrize jedes mal neu berechnen
 
+
 """
 
 
@@ -79,7 +80,7 @@ class UndoHandler(QtWidgets.QUndoCommand):
         self.deleted_obj = None
 
     def undo(self):
-        print("undo", self.paint_objects)
+        # print("undo", self.paint_objects)
         self.deleted_obj = self.paint_objects[-1]
         self.paint_objects.pop()
 
@@ -120,31 +121,31 @@ class PaintArea(QtWidgets.QWidget):
 
         self.current_cursor_point = None
 
-        self.active_color = QtGui.QColor(255, 255, 255)
+        self.active_color = QtGui.QColor(128, 255, 128)
         self.active_size = 20
         self.active_shape = 'LINE'
 
         # some reference points for testing
         # self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
-        one = Circles(self.active_color, self.active_size)
-        one.add_point(0, 0)
-        self.paint_objects.append(one)
-
-        two = Circles(self.active_color, self.active_size)
-        two.add_point(self.width() - 2 * self.active_size, 0)
-        self.paint_objects.append(two)
-
-        three = Circles(self.active_color, self.active_size)
-        three.add_point(self.width() - 2 * self.active_size, self.height() - 2 * self.active_size)
-        self.paint_objects.append(three)
-
-        four = Circles(self.active_color, self.active_size)
-        four.add_point(self.width() / 2 - self.active_size, self.height() / 2 - self.active_size)
-        self.paint_objects.append(four)
-
-        five = Circles(self.active_color, self.active_size)
-        five.add_point(0, self.height() - self.active_size * 2)
-        self.paint_objects.append(five)
+        # one = Circles(self.active_color, self.active_size)
+        # one.add_point(0, 0)
+        # self.paint_objects.append(one)
+        #
+        # two = Circles(self.active_color, self.active_size)
+        # two.add_point(self.width() - 2 * self.active_size, 0)
+        # self.paint_objects.append(two)
+        #
+        # three = Circles(self.active_color, self.active_size)
+        # three.add_point(self.width() - 2 * self.active_size, self.height() - 2 * self.active_size)
+        # self.paint_objects.append(three)
+        #
+        # four = Circles(self.active_color, self.active_size)
+        # four.add_point(self.width() / 2 - self.active_size, self.height() / 2 - self.active_size)
+        # self.paint_objects.append(four)
+        #
+        # five = Circles(self.active_color, self.active_size)
+        # five.add_point(0, self.height() - self.active_size * 2)
+        # self.paint_objects.append(five)
 
         self.setup_color_screen()
 
@@ -152,8 +153,8 @@ class PaintArea(QtWidgets.QWidget):
         self.color_btns_overview = []
         self.color_screen = False
 
-        num_x = 10
-        num_y = 10
+        num_x = 20
+        num_y = 20
 
         btn_width = self.width()/num_x
         btn_height = self.height()/num_y
@@ -162,7 +163,7 @@ class PaintArea(QtWidgets.QWidget):
             for y in range(num_y):
                 # qp.setBrush(QtGui.QColor(25*x, 25*y, 25*(x+y) % 255))
                 # qp.drawRect(x*self.width()/10, y*self.height()/10, self.width()/10, self.height()/10)
-                btn = Color(25*x, 25*y, 25*(x+y) % 255, x=x*btn_width, y=y*btn_height)
+                btn = Color(255/num_x*x, 255/num_y*y, 255/num_x*(x+y) % 255, x=x*btn_width, y=y*btn_height)
                 btn.setFixedSize(btn_width, btn_height)
                 btn.clicked.connect(partial(self.set_active_color, btn.color))
                 self.color_btns_overview.append(btn)
@@ -250,10 +251,10 @@ class PaintArea(QtWidgets.QWidget):
                         qp.drawEllipse(circle[0], circle[1], elem.size, elem.size)
 
             if self.grid:
-                qp.setPen(QtGui.QColor(255, 100, 100, 50))  # semi-transparent
-                for x in range(0, self.width(), 20):
+                qp.setPen(QtGui.QColor(255, 100, 100, 64))  # semi-transparent
+                for x in range(0, self.width(), 30):
                     qp.drawLine(x, 0, x, self.height())
-                for y in range(0, self.height(), 20):
+                for y in range(0, self.height(), 30):
                     qp.drawLine(0, y, self.width(), y)
 
         if self.current_cursor_point:
@@ -345,12 +346,12 @@ class ShapePicker(QtWidgets.QWidget):
         if self.width and self.height:
             self.setFixedWidth(self.width)
             self.setFixedHeight(self.height)
-        layout = Qt.QHBoxLayout()
+        layout = Qt.QVBoxLayout()
 
         for name, color in self.shapes.items():
             btn = Shape(name)
             if self.width and self.height:
-                btn.setFixedSize(self.height - 20, self.height - 20)
+                btn.setFixedSize(self.width - 20, self.height/2 - 10)
 
             layout.addWidget(btn)
             # self.btn_shapes.append(btn)
@@ -380,12 +381,12 @@ class Shape(QtWidgets.QPushButton):
         self.css_highlighted = """
             background-color: rgb(250, 250, 250);
             border: 5px solid green;
-            border-radius: 20px;
+            border-radius: 2px;
         """
 
         self.css_not_highlighted = """
             background-color: rgb(150, 150, 150);
-            border-radius: 20px;
+            border-radius: 2px;
         """
 
         self.setStyleSheet(self.css_not_highlighted)
@@ -500,7 +501,7 @@ class ToolPicker(QtWidgets.QWidget):
             'DRAW': 0,
             'SELECT': 1,
             'MOVE': 2,
-            'ROTATE': 3
+            # 'ROTATE': 3
         }
 
         self.btn_tools = {}
@@ -512,11 +513,11 @@ class ToolPicker(QtWidgets.QWidget):
     def init_ui(self):
         self.setFixedWidth(self.width)
         self.setFixedHeight(self.height)
-        layout = Qt.QHBoxLayout()
+        layout = Qt.QVBoxLayout()
 
         for name, color in self.tools.items():
             btn = Tool(name)
-            btn.setFixedSize(self.height - 20, self.height - 20)
+            btn.setFixedSize(self.height/4 - 10, self.height/4 - 10)
 
             layout.addWidget(btn)
             self.btn_tools[name] = btn
@@ -654,8 +655,8 @@ class PaintApplication:
         self.main_layout = QtWidgets.QHBoxLayout()
         self.window.setLayout(self.main_layout)
 
-        self.setup_left_column(2 * self.window.width() / 12)
-        self.setup_paint_area(10 * self.window.width() / 12, self.window.height())
+        self.setup_left_column(8 * self.window.width() / 128)
+        self.setup_paint_area(120 * self.window.width() / 128, self.window.height())
 
     def setup_left_column(self, width):
         """
@@ -683,25 +684,25 @@ class PaintApplication:
         layout.addWidget(self.shape_picker)
 
         self.color_picker = ColorPicker(width, 100)
-        layout.addWidget(self.color_picker)
+        # layout.addWidget(self.color_picker)
 
-        self.tool_picker = ToolPicker(width, 100)
+        self.tool_picker = ToolPicker(width, 4*self.window.height()/12)
         layout.addWidget(self.tool_picker)
 
         self.btn_m = QtWidgets.QPushButton("-")
         self.btn_p = QtWidgets.QPushButton("+")
 
-        layout.addWidget(self.btn_m)
-        layout.addWidget(self.btn_p)
+        # layout.addWidget(self.btn_m)
+        # layout.addWidget(self.btn_p)
 
-        layout.addWidget(QtWidgets.QLabel("WiiMote connection status"))
+        # layout.addWidget(QtWidgets.QLabel("Connection status"))
         self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
         self.label_wm_connection_status.setAlignment(Qt.Qt.AlignCenter)
         self.label_wm_connection_status.setFixedHeight(100)
         self.fill_label_background(self.label_wm_connection_status, self.RED)
         layout.addWidget(self.label_wm_connection_status)
 
-        layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
+        layout.addWidget(QtWidgets.QLabel("Mac Address:"))
         self.line_edit_br_addr = QtWidgets.QLineEdit()
         self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
         # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
@@ -710,12 +711,12 @@ class PaintApplication:
         self.button_connect.clicked.connect(self.connect_wm)
         layout.addWidget(self.button_connect)
 
-        layout.addWidget(QtWidgets.QLabel("Number of tracked IR-Markers:"))
+        # layout.addWidget(QtWidgets.QLabel("Number of tracked IR-Markers:"))
         self.num_ir_objects = QtWidgets.QLabel("0")
         font = QtGui.QFont("Helvetica", 32)
         self.num_ir_objects.setFont(font)
         self.num_ir_objects.setFixedHeight(300)
-        layout.addWidget(self.num_ir_objects)
+        # layout.addWidget(self.num_ir_objects)
 
         # needed so the elements do not stretch the whole hieght and therefore have huge white gaps inbetween
         layout.addStretch()
@@ -863,19 +864,19 @@ class PaintApplication:
                         # for testing
                         # invoke mouseclick at cursor pos shpudl do the trick
                         for color in self.paint_area.color_btns_overview:
-                            print(color.x, color.y)
-                            print(color.width(), color.height())
-                            print(self.paint_area.current_cursor_point)
+                            # print(color.x, color.y)
+                            # print(color.width(), color.height())
+                            # print(self.paint_area.current_cursor_point)
                             if self.paint_area.current_cursor_point[0] >= color.x and self.paint_area.current_cursor_point[0] <= color.x+color.width():
                                 if self.paint_area.current_cursor_point[1] >= color.y and self.paint_area.current_cursor_point[1] <= color.y + color.height():
                                     color.click()
-                                    print(color.name)
-                                    print("HELLOOO")
+                                    # print(color.name)
+                                    # print("HELLOOO")
                                     break
                         self.paint_area.update()
                     else:
                         if self.tool_picker.active_tool == 'DRAW':
-			    if len(self.selected_objects) > 0:
+                            if len(self.selected_objects) > 0:
                                 for obj in self.selected_objects:
                                     obj.selected = False
                             self.paint_area.start_drawing()
@@ -990,16 +991,18 @@ class PaintApplication:
 
     def get_selected_objects(self):
         selected_objects = []
-        for obj in self.paint_area.paint_objects:
-            for point in obj.points:
-                if point[0] > self.select_tlx and point[0] < self.select_brx:
-                    print("in x range")
-                    if point[1] > self.select_tly and point[1] < self.select_bry:
-                        print("in x and y range so should be selected")
-                        selected_objects.append(obj)
-                        obj.selected = True
-                        break
-
+        if self.select_tlx and self.select_tly and self.select_brx and self.select_bry:
+            for obj in self.paint_area.paint_objects:
+                for point in obj.points:
+                    if point[0] > self.select_tlx and point[0] < self.select_brx:
+                        # print("in x range")
+                        if point[1] > self.select_tly and point[1] < self.select_bry:
+                            # print("in x and y range so should be selected")
+                            selected_objects.append(obj)
+                            obj.selected = True
+                            break
+        else:
+            print("TLX/Y and BRX/Y not defined")
         return selected_objects
 
     def start_recognition(self):
@@ -1014,7 +1017,7 @@ class PaintApplication:
         if len(self.recognition_data) > 0:
             gesture = self.gesture_recognition.get_gesture(self.recognition_data)
             # handle gesture etc
-            print(gesture)
+            # print(gesture)
             print(gesture.name)
             self.handle_gesture(gesture)
 
@@ -1054,7 +1057,7 @@ class PaintApplication:
         elif gesture.name == 'Swipe up':
             self.tool_picker.btn_tools['ROTATE'].click()
             # self.paint_area.rotation_mode = True
-        elif gesture.name == 'Swipe down':
+        elif gesture.name == 'Z_shape':
             self.tool_picker.btn_tools['SELECT'].click()
         elif gesture.name == 'M_shape':
             self.tool_picker.btn_tools['MOVE'].click()
@@ -1064,6 +1067,9 @@ class PaintApplication:
             self.paint_area.update()
         elif gesture.name == 'mirrored_C_shape':
             self.tool_picker.btn_tools['DRAW'].click()
+            if len(self.selected_objects) > 0:
+                for obj in self.selected_objects:
+                    obj.selected = False
             self.selection_mode = 'standard'
             print("standard")
 
