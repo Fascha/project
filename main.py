@@ -66,6 +66,29 @@ TODO:
         => matrize jedes mal neu berechnen
 
 
+
+
+
+
+    TODO bis Dienstag 01.07 23:59:
+
+    - Code cleanup (Comments)
+    - Code Rafactoring (Decomposition, eigene Files für Klassen etc.)
+    - Code Refactoring (Pythonic vs non-pythonic)
+    - PEP8
+
+
+    - Cursor mit aktueller Farbe einfärben
+
+    - Video
+    - Paper
+
+
+    OPTIONAL:
+        - Rotation
+        - Delete
+        - Scale
+
 """
 
 
