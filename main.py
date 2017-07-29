@@ -78,13 +78,14 @@ TODO:
     - PEP8
 
 
-    - Cursor mit aktueller Farbe einfärben
+    - Cursor mit aktueller Farbe einfärben ---- DONE ----
 
     - Video
     - Paper
 
 
     OPTIONAL:
+        - Auslagern der Gestendaten in File und einlesen des Files
         - Rotation
         - Delete
         - Scale
@@ -275,13 +276,11 @@ class PaintArea(QtWidgets.QWidget):
         self.stack.push(UndoHandler(self.paint_objects))
         self.update()
 
-    # Undo function to remove last step from the stack
     def undo_drawing(self):
         if len(self.paint_objects) != 0:
             self.stack.undo()
             self.update()
 
-    # Redo function
     def redo_drawing(self):
         self.stack.redo()
         self.update()
@@ -306,8 +305,6 @@ class ShapePicker(QtWidgets.QWidget):
             'LINE': 1
         }
 
-        # self.btn_shapes = []
-
         self.btn_shapes = {}
 
         self.active_shape = 'LINE'
@@ -326,7 +323,6 @@ class ShapePicker(QtWidgets.QWidget):
                 btn.setFixedSize(self.width - 20, self.height/2 - 10)
 
             layout.addWidget(btn)
-            # self.btn_shapes.append(btn)
             self.btn_shapes[name] = btn
         self.setLayout(layout)
 
@@ -591,8 +587,7 @@ class PaintApplication:
 
         self.last_known_cursor_coord = None
 
-        # stuff selected at startup
-
+        # initial selected tool/color/shape
         self.tool_picker.btn_tools['DRAW'].click()
         self.shape_picker.btn_shapes['LINE'].click()
         self.color_picker.btn_colors['RED'].click()
@@ -602,18 +597,8 @@ class PaintApplication:
     def setup_ui(self):
         self.window = QtWidgets.QWidget()
 
-        print("WINDOWS SIZE BEFORE MAX: ", self.window.size())
-
         self.window.showFullScreen()
         self.window.resize(self.screen_width, self.screen_height)
-
-        print("WINDOWS SIZE AFTER MAX: ", self.window.size())
-
-        # self.main_layout = QtWidgets.QGridLayout()
-        # self.window.setLayout(self.main_layout)
-        #
-        # self.setup_config_ui()
-        # self.setup_paint_area_ui()
 
         self.main_layout = QtWidgets.QHBoxLayout()
         self.window.setLayout(self.main_layout)
@@ -703,97 +688,6 @@ class PaintApplication:
         for name, tool in self.tool_picker.btn_tools.items():
             tool.clicked.connect(partial(self.update_tool, tool.name))
 
-    # deprecated (can be deleted)
-    def setup_config_ui(self):
-
-        layout = QtWidgets.QVBoxLayout()
-
-        self.num_ir_objects = QtWidgets.QLabel("0")
-        fo = QtGui.QFont("Times", 128)
-        self.num_ir_objects.setFont(fo)
-        self.num_ir_objects.setFixedHeight(300)
-        layout.addWidget(self.num_ir_objects)
-
-        layout.addWidget(QtWidgets.QLabel("WiiMote connection status"))
-        self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
-        self.label_wm_connection_status.setAlignment(Qt.Qt.AlignCenter)
-        self.label_wm_connection_status.setFixedHeight(100)
-        self.fill_label_background(self.label_wm_connection_status, self.RED)
-        layout.addWidget(self.label_wm_connection_status)
-
-        layout.addWidget(QtWidgets.QLabel("Enter your WiiMotes Mac Address:"))
-        self.line_edit_br_addr = QtWidgets.QLineEdit()
-        self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
-        # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
-        layout.addWidget(self.line_edit_br_addr)
-        self.button_connect = QtWidgets.QPushButton("Connect")
-        self.button_connect.clicked.connect(self.connect_wm)
-        layout.addWidget(self.button_connect)
-
-        # layout.addSpacerItem(QtWidgets.QSpacerItem(0, 300))
-
-        self.main_layout.addLayout(layout, 0, 0, 12, 2, Qt.Qt.AlignCenter)
-
-    # deprecated (can be deleted)
-    def setup_paint_area_ui(self):
-        layout = QtWidgets.QVBoxLayout()
-
-        top_line_widget = QtWidgets.QWidget()
-        top_line_widget.setFixedHeight(1 * self.screen_height / 12)
-        top_line_widget_layout = QtWidgets.QHBoxLayout()
-
-        top_line_widget_layout.setAlignment(Qt.Qt.AlignCenter)
-
-        top_line_widget.setLayout(top_line_widget_layout)
-
-        # for debugging
-        # top_line_widget.setStyleSheet("border: 5px solid green; border-radius: 20px;")
-
-
-        self.shape_picker = ShapePicker(top_line_widget.width(), top_line_widget.height())
-        self.shape_picker.setFixedHeight(top_line_widget.height())
-        top_line_widget_layout.addWidget(self.shape_picker)
-
-        self.color_picker = ColorPicker(top_line_widget.width(), top_line_widget.height())
-
-        self.tool_picker = ToolPicker(top_line_widget.width(), top_line_widget.height())
-
-        btn_m = QtWidgets.QPushButton("-")
-        btn_p = QtWidgets.QPushButton("+")
-
-        btn_m.setFixedSize(top_line_widget.height() - 20, top_line_widget.height() - 20)
-        btn_p.setFixedSize(top_line_widget.height() - 20, top_line_widget.height() - 20)
-
-        top_line_widget_layout.addWidget(btn_m)
-        top_line_widget_layout.addWidget(btn_p)
-
-        top_line_widget_layout.addWidget(self.color_picker)
-
-        top_line_widget_layout.addWidget(self.tool_picker)
-
-        layout.addWidget(top_line_widget)
-
-        self.paint_area = PaintArea(width=(11 * self.screen_width / 12), height=(11 * self.screen_height / 12))
-
-        self.paint_area.setFixedHeight(11 * self.screen_height / 12)
-        self.paint_area.setFixedWidth(11 * self.screen_width / 12)
-
-        layout.addWidget(self.paint_area)
-
-        self.main_layout.addLayout(layout, 0, 2, 12, 10)
-
-        btn_p.clicked.connect(self.paint_area.increase_pen_size)
-        btn_m.clicked.connect(self.paint_area.decrease_pen_size)
-
-        for name, btn in self.shape_picker.btn_shapes.items():
-            btn.clicked.connect(partial(self.update_shape, btn.name))
-
-        for color in self.color_picker.btn_colors:
-            color.clicked.connect(partial(self.update_pen_color, color.color))
-
-        for tool in self.tool_picker.btn_tools:
-            tool.clicked.connect(partial(self.update_tool, tool.name))
-
     def update_shape(self, shape):
         self.paint_area.active_shape = shape
 
@@ -814,7 +708,6 @@ class PaintApplication:
         self.label_wm_connection_status.setText("Connected to %s" % addr)
 
         self.wm.buttons.register_callback(self.handle_buttons)
-        self.wm.accelerometer.register_callback(self.handle_axis)
         self.wm.ir.register_callback(self.handle_ir_data)
 
     def handle_buttons(self, buttons):
@@ -919,10 +812,8 @@ class PaintApplication:
         if self.select_tlx and self.select_tly and self.select_brx and self.select_bry:
             for obj in self.paint_area.paint_objects:
                 for point in obj.points:
-                    if point[0] > self.select_tlx and point[0] < self.select_brx:
-                        # print("in x range")
-                        if point[1] > self.select_tly and point[1] < self.select_bry:
-                            # print("in x and y range so should be selected")
+                    if self.select_tlx < point[0] < self.select_brx:
+                        if self.select_tly < point[1] < self.select_bry:
                             selected_objects.append(obj)
                             obj.selected = True
                             break
@@ -934,19 +825,14 @@ class PaintApplication:
         print("Started Recognition Mode")
         self.recognition_mode_enabled = True
         self.recognition_data = []
-        # self.set_recognition_mode(True)
 
     def stop_recognition(self):
         print("Stopped Recognition Mode")
         self.recognition_mode_enabled = False
         if len(self.recognition_data) > 0:
             gesture = self.gesture_recognition.get_gesture(self.recognition_data)
-            # handle gesture etc
-            # print(gesture)
             print(gesture.name)
             self.handle_gesture(gesture)
-
-            # self.set_recognition_mode(False)
 
     def start_moving(self):
         self.last_known_cursor_coord = None
@@ -960,15 +846,9 @@ class PaintApplication:
         if gesture.name == 'Swipe left':
             if self.active_area == 'paint_area':
                 self.paint_area.undo_drawing()
-            elif self.active_area == 'color_picker':
-                # nextcolor
-                pass
         elif gesture.name == 'Swipe right':
             if self.active_area == 'paint_area':
                 self.paint_area.redo_drawing()
-            elif self.active_area == 'color_picker':
-                # previouscolor
-                pass
         elif gesture.name == 'Circle clockwise':
             self.shape_picker.btn_shapes['CIRCLE'].click()
         elif gesture.name == 'Circle counterclockwise':
@@ -991,10 +871,10 @@ class PaintApplication:
 
     def handle_ir_data(self, ir_data):
 
-        # links oben in ir cam: x=0 y=786
-        # rechts oben in ir cam: x=1023 y=786
-        # links unten in ir cam: x=0 y=0
-        # rechts unten in ir cam: x=1023 y=0
+        # top left: x=0 y=786
+        # top right: x=1023 y=786
+        # bottom left: x=0 y=0
+        # bottom right: x=1023 y=0
 
         self.num_ir_objects.setText("%d" % len(ir_data))
         led_list = [0, 0, 0, 0]
@@ -1002,34 +882,25 @@ class PaintApplication:
             led_list[x] = 1
         self.wm.set_leds(led_list)
 
-        # for ir in ir_data:
-        #     print("x: %d\ty: %d\tid: %d" %(ir['x'], ir['y'], ir['id']))
-
-        # there needto be the four markers for the corners
+        # there need to be the four markers for the corners
         if len(ir_data) == 4:
 
             x = [ir_object['x'] for ir_object in ir_data]
             y = [ir_object['y'] for ir_object in ir_data]
 
-            # calc matrix
+            # needed so we don't get an error when connecting the WiiMote
             if x[0] < 1023:
-                # more pythonic
                 sensor_coords = [(ir_object['x'], ir_object['y']) for ir_object in ir_data]
 
                 self.mapping.calculate_source_to_dest(sensor_coords)
 
-                # map data
                 mapped_data = self.mapping.get_pointing_point()
 
-                ###############
-                ## from here on we can do everything with the calculated "cursor" pos
-                ###############
+                # from here on we can do everything with the calculated "cursor" pos
 
                 # setting cursor pos
                 self.paint_area.current_cursor_point = mapped_data
 
-                # checking if cursor position is in paint area
-                # if mapped_data[0] > self.paint_area_absolut_x_pos and mapped_data[1] > self.paint_area_absolut_y_pos:
                 if self.paint_area.drawing:
                     # drawing into the paint area
                     self.paint_area.add_point(*mapped_data)
@@ -1049,7 +920,6 @@ class PaintApplication:
                     self.move_objects(self.selected_objects)
 
                 # handle toolpicker states /selected tool
-
                 if self.tool_picker.active_tool == 'SELECT' and self.selection_mode_enabled:
                     if not self.select_area_start_pos:
                         self.select_area_start_pos = mapped_data

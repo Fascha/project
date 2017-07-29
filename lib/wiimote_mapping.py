@@ -2,7 +2,10 @@ import numpy as np
 
 
 class Mapping:
-
+    """
+    This is an adapted version of Affective Transformation:
+    https://math.stackexchange.com/questions/296794/finding-the-transform-matrix-from-4-projected-points-with-javascript
+    """
     def __init__(self, dest_w, dest_h):
         self.SRC_W = 1024
         self.SRC_H = 768
@@ -17,10 +20,11 @@ class Mapping:
 
     def calculate_source_to_dest(self, ir_markers):
         if len(ir_markers) == 4:
-            # links oben in ir cam: x=0 y=786
-            # rechts oben in ir cam: x=1023 y=786
-            # links unten in ir cam: x=0 y=0
-            # rechts unten in ir cam: x=1023 y=0
+
+            # top left: x=0 y=786
+            # top right: x=1023 y=786
+            # bottom left: x=0 y=0
+            # bottom right: x=1023 y=0
 
             ir_markers_sorted = sorted(ir_markers)
 
