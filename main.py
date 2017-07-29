@@ -103,7 +103,6 @@ class UndoHandler(QtWidgets.QUndoCommand):
         self.deleted_obj = None
 
     def undo(self):
-        # print("undo", self.paint_objects)
         self.deleted_obj = self.paint_objects[-1]
         self.paint_objects.pop()
 
@@ -128,18 +127,14 @@ class PaintArea(QtWidgets.QWidget):
 
         self.grid = True
         self.recognition_mode = False
-        # self.points = []
 
         self.current_mode = 'LINE'
 
         self.paint_objects = []
 
         self.current_paint_object = None
-        # self.rot = 45
-        # self.rotation_mode = False
         self.selection_rect = None
 
-        # self.setMouseTracking(True)  # only get events when button is pressed
         self.init_ui()
 
         self.current_cursor_point = None
@@ -147,28 +142,6 @@ class PaintArea(QtWidgets.QWidget):
         self.active_color = QtGui.QColor(128, 255, 128)
         self.active_size = 20
         self.active_shape = 'LINE'
-
-        # some reference points for testing
-        # self.paint_objects.append(Pixel(0, 0, self.active_color, self.active_size))
-        # one = Circles(self.active_color, self.active_size)
-        # one.add_point(0, 0)
-        # self.paint_objects.append(one)
-        #
-        # two = Circles(self.active_color, self.active_size)
-        # two.add_point(self.width() - 2 * self.active_size, 0)
-        # self.paint_objects.append(two)
-        #
-        # three = Circles(self.active_color, self.active_size)
-        # three.add_point(self.width() - 2 * self.active_size, self.height() - 2 * self.active_size)
-        # self.paint_objects.append(three)
-        #
-        # four = Circles(self.active_color, self.active_size)
-        # four.add_point(self.width() / 2 - self.active_size, self.height() / 2 - self.active_size)
-        # self.paint_objects.append(four)
-        #
-        # five = Circles(self.active_color, self.active_size)
-        # five.add_point(0, self.height() - self.active_size * 2)
-        # self.paint_objects.append(five)
 
         self.setup_color_screen()
 
@@ -184,8 +157,6 @@ class PaintArea(QtWidgets.QWidget):
 
         for x in range(num_x):
             for y in range(num_y):
-                # qp.setBrush(QtGui.QColor(25*x, 25*y, 25*(x+y) % 255))
-                # qp.drawRect(x*self.width()/10, y*self.height()/10, self.width()/10, self.height()/10)
                 btn = Color(255/num_x*x, 255/num_y*y, 255/num_x*(x+y) % 255, x=x*btn_width, y=y*btn_height)
                 btn.setFixedSize(btn_width, btn_height)
                 btn.clicked.connect(partial(self.set_active_color, btn.color))
@@ -206,16 +177,11 @@ class PaintArea(QtWidgets.QWidget):
                 self.current_paint_object.add_point(ev.x(), ev.y())
                 self.paint_objects.append(self.current_paint_object)
             elif self.active_shape == 'CIRCLE':
-                # self.current_paint_object = Pixel(ev.x(), ev.y(), self.active_color)
                 self.current_paint_object = Circles(color=self.active_color, size=self.active_size)
                 self.paint_objects.append(self.current_paint_object)
 
             self.update()
         elif ev.button() == QtCore.Qt.RightButton:
-            # try:
-            #     self.points = custom_filter(self.points) # needs to be implemented outside!
-            # except NameError:
-            #     pass
             self.update()
 
     def mouseReleaseEvent(self, ev):
@@ -229,7 +195,6 @@ class PaintArea(QtWidgets.QWidget):
             if self.active_shape == 'LINE':
                 self.current_paint_object.add_point(ev.x(), ev.y())
             elif self.active_shape == 'CIRCLE':
-                # self.paint_objects.append(Pixel(ev.x(), ev.y(), self.active_color, self.active_size))
                 self.current_paint_object.add_point(ev.x(), ev.y())
 
             self.update()
@@ -242,12 +207,6 @@ class PaintArea(QtWidgets.QWidget):
         qp.begin(self)
         qp.setBrush(QtGui.QColor(0, 0, 0))
         qp.drawRect(ev.rect())
-        # lines
-        # qp.setBrush(QtGui.QColor(20, 255, 190))
-        # dots
-        # qp.drawPolyline(self.poly(self.points))
-        # if self.rotation_mode:
-        #     qp.rotate(self.rot)
 
         if self.color_screen:
             for elem in self.color_btns_overview:
@@ -280,12 +239,15 @@ class PaintArea(QtWidgets.QWidget):
                 for y in range(0, self.height(), 30):
                     qp.drawLine(0, y, self.width(), y)
 
+        # drawing the current cursor position for visual reference
         if self.current_cursor_point:
             qp.setPen(QtGui.QColor(255, 0, 0))
+            qp.setBrush(self.active_color)
 
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
             qp.drawRect(self.current_cursor_point[0] - 10, self.current_cursor_point[1] - 10, 20, 20)
 
+        # drawing the selection rect if there is one
         if self.selection_rect:
             qp.setBrush(QtGui.QColor(2, 250, 250, 64))
             qp.drawRect(self.selection_rect)
@@ -295,10 +257,6 @@ class PaintArea(QtWidgets.QWidget):
     def add_point(self, x, y):
         self.current_paint_object.add_point(x, y)
         self.update()
-
-        # if self.drawing:
-        #     self.points.append((x, y))
-        #     self.update()
 
     def start_drawing(self):
         print("Started drawing")
@@ -326,15 +284,6 @@ class PaintArea(QtWidgets.QWidget):
     # Redo function
     def redo_drawing(self):
         self.stack.redo()
-        self.update()
-
-    # Select previous color with left D-Pad key
-    def select_previous_color(self):
-        # print("active color ", self.active_color)
-        self.update()
-
-    # Select next color with right D-Pad key
-    def select_next_color(self):
         self.update()
 
     def increase_pen_size(self):
@@ -524,7 +473,6 @@ class ToolPicker(QtWidgets.QWidget):
             'DRAW': 0,
             'SELECT': 1,
             'MOVE': 2,
-            # 'ROTATE': 3
         }
 
         self.btn_tools = {}
@@ -601,8 +549,6 @@ class PaintApplication:
     GRAY = QtGui.QColor(100, 100, 100)
     BLACK = QtGui.QColor(0, 0, 0)
 
-    rot = 0
-
     def __init__(self):
 
         screen = QtWidgets.QDesktopWidget().screenGeometry(-1)
@@ -620,15 +566,12 @@ class PaintApplication:
         self.active_area = 'paint_area'
 
         self.mapping = Mapping(1920, 1080)
-        print("ASSERTED: (99.44448537537721, 847.1789582258892)")
-        test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
-        self.mapping.calculate_source_to_dest(test_data)
-        print("RESULT: ", self.mapping.get_pointing_point())
 
-        # self.mapping = Mapping(self.paint_area.width(), self.paint_area.height())
-
-        self.paint_area_absolut_x_pos = self.window.width() - self.paint_area.width()
-        self.paint_area_absolut_y_pos = self.window.height() - self.paint_area.height()
+        # used for testing the IR Mapping
+        # print("ASSERTED: (99.44448537537721, 847.1789582258892)")
+        # test_data = [(500, 300), (950, 300), (900, 700), (450, 690)]
+        # self.mapping.calculate_source_to_dest(test_data)
+        # print("RESULT: ", self.mapping.get_pointing_point())
 
         self.mapping = Mapping(self.window.width(), self.window.height())
 
@@ -645,9 +588,6 @@ class PaintApplication:
 
         self.moving = False
         self.moving_coords = []
-
-        self.rotating = False
-        self.rotating_coords = []
 
         self.last_known_cursor_coord = None
 
@@ -879,22 +819,14 @@ class PaintApplication:
 
     def handle_buttons(self, buttons):
         for button in buttons:
-            # if button[0] == 'A' and not self.dragging_mode:
             if button[0] == 'A':
                 if button[1]:
                     if self.paint_area.color_screen:
                         self.paint_area.color_screen = False
-                        # for testing
-                        # invoke mouseclick at cursor pos shpudl do the trick
                         for color in self.paint_area.color_btns_overview:
-                            # print(color.x, color.y)
-                            # print(color.width(), color.height())
-                            # print(self.paint_area.current_cursor_point)
-                            if self.paint_area.current_cursor_point[0] >= color.x and self.paint_area.current_cursor_point[0] <= color.x+color.width():
-                                if self.paint_area.current_cursor_point[1] >= color.y and self.paint_area.current_cursor_point[1] <= color.y + color.height():
+                            if color.x <= self.paint_area.current_cursor_point[0] <= color.x + color.width():
+                                if color.y <= self.paint_area.current_cursor_point[1] <= color.y + color.height():
                                     color.click()
-                                    # print(color.name)
-                                    # print("HELLOOO")
                                     break
                         self.paint_area.update()
                     else:
@@ -907,29 +839,19 @@ class PaintApplication:
                             if len(self.selected_objects) > 0:
                                 for obj in self.selected_objects:
                                     obj.selected = False
-                            self.selection_mode_enabled = True
-                            self.select_area_start_pos = None
-                            self.select_area_end_pos = None
+                            self.start_selection()
                         elif self.tool_picker.active_tool == 'MOVE':
                             self.start_moving()
-                        elif self.tool_picker.active_tool == 'ROTATE':
-                            self.start_rotating()
                 elif not button[1]:
                     if self.tool_picker.active_tool == 'DRAW':
                         self.paint_area.stop_drawing()
                     elif self.tool_picker.active_tool == 'SELECT':
-                        self.selection_mode_enabled = False
-                        self.paint_area.selection_rect = None
+                        self.stop_selection()
                         self.selected_objects = self.get_selected_objects()
                     elif self.paint_area.active_tool == 'MOVE':
-                        # self.tool_picker.btn_tools['MOVE'].click()
-                        # self.dragging_mode = True
                         self.stop_moving()
-                    elif self.paint_area.active_tool == 'ROTATE':
-                        self.stop_rotating()
             elif button[0] == 'B':
                 if button[1]:
-                    # self.paint_area.rotation_mode = False
                     self.start_recognition()
                 elif not button[1]:
                     self.stop_recognition()
@@ -937,63 +859,34 @@ class PaintApplication:
             elif button[0] == 'Minus':
                 if button[1]:
                     self.paint_area.undo_drawing()
-                elif not button[1]:
-                    # do something
-                    print("Undo button not pressed")
             # Redo last step
             elif button[0] == 'Plus':
                 if button[1]:
                     self.paint_area.redo_drawing()
-                elif not button[1]:
-                    # do something
-                    print("Redo button not pressed")
-            # Select previous color with left button click
-            elif button[0] == 'Left':
-                if button[1]:
-                    self.paint_area.select_previous_color()
-                elif not button[1]:
-                    # do something
-                    print("Left button not pressed")
-            # Select next color with right button click
-            elif button[0] == 'Right':
-                if button[1]:
-                    self.paint_area.select_next_color()
-                elif not button[1]:
-                    # do something
-                    print("Right button not pressed")
-            elif button[0] == 'Up':
-                print("UP")
-                if button[1]:
-                    for elem in self.paint_area.paint_objects:
-                        elem.move((100, 100))
+            # elif button[0] == 'Up':
+            #     if button[1]:
+            #         for elem in self.paint_area.paint_objects:
+            #             elem.move((100, 100))
+            #         self.paint_area.update()
+            # elif button[0] == 'Down':
+            #     if button[1]:
+            #         for elem in self.paint_area.paint_objects:
+            #             elem.move((-100, -100))
                     self.paint_area.update()
-                elif not button[1]:
-                    # do something
-                    print("Right button not pressed")
-            elif button[0] == 'Down':
-                if button[1]:
-                    # self.paint_area.select_next_color()
-                    print("DOWN")
-                    for elem in self.paint_area.paint_objects:
-                        elem.move((-100, -100))
-                    self.paint_area.update()
-                elif not button[1]:
-                    # do something
-                    print("Right button not pressed")
             elif button[0] == 'One':
                 self.paint_area.increase_pen_size()
             elif button[0] == 'Two':
                 self.paint_area.decrease_pen_size()
 
-    def moveObjects(self, objects):
-        movement_data = self.calculateDirection()
+    def move_objects(self, objects):
+        movement_data = self.calculate_direction()
         for i in range(len(objects)):
             for j in range(len(objects[i].points)):
-                newX = objects[i].points[j][0] + (movement_data[0] * movement_data[2]) / 10
-                newY = objects[i].points[j][1] + (movement_data[1] * movement_data[3]) / 10
-                objects[i].points[j] = (newX, newY)
+                new_x = objects[i].points[j][0] + (movement_data[0] * movement_data[2]) / 10
+                new_y = objects[i].points[j][1] + (movement_data[1] * movement_data[3]) / 10
+                objects[i].points[j] = (new_x, new_y)
 
-    def calculateDirection(self):
+    def calculate_direction(self):
         self.direction_list
         x1 = self.direction_list[0][0]
         y1 = self.direction_list[0][1]
@@ -1011,6 +904,15 @@ class PaintApplication:
             directionY = -1
 
         return distX, distY, directionX, directionY
+
+    def start_selection(self):
+        self.selection_mode_enabled = True
+        self.select_area_start_pos = None
+        self.select_area_end_pos = None
+
+    def stop_selection(self):
+        self.selection_mode_enabled = False
+        self.paint_area.selection_rect = None
 
     def get_selected_objects(self):
         selected_objects = []
@@ -1054,12 +956,6 @@ class PaintApplication:
         self.moving = False
         self.moving_coords = []
 
-    def start_rotating(self):
-        print("Rotating")
-
-    def stop_rotating(self):
-        pass
-
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
             if self.active_area == 'paint_area':
@@ -1077,9 +973,6 @@ class PaintApplication:
             self.shape_picker.btn_shapes['CIRCLE'].click()
         elif gesture.name == 'Circle counterclockwise':
             self.shape_picker.btn_shapes['LINE'].click()
-        elif gesture.name == 'Swipe up':
-            self.tool_picker.btn_tools['ROTATE'].click()
-            # self.paint_area.rotation_mode = True
         elif gesture.name == 'Z_shape':
             self.tool_picker.btn_tools['SELECT'].click()
         elif gesture.name == 'M_shape':
@@ -1095,21 +988,6 @@ class PaintApplication:
                     obj.selected = False
             self.selection_mode = 'standard'
             print("standard")
-
-    def handle_axis(self, accel_data):
-        x = accel_data[0]
-        z = accel_data[2]
-        diffx = (612 - x) / 200
-        diffz = (z - 508) / 200
-
-        normalX = [0, float(np.cos(diffx * np.pi))]
-        normalY = [0, float(np.sin(diffz * np.pi))]
-
-        angle = math.degrees(math.atan2(normalY[1], normalX[1]))
-        angle -= 90
-        self.paint_area.rot = angle
-
-        # print(angle)
 
     def handle_ir_data(self, ir_data):
 
@@ -1151,11 +1029,10 @@ class PaintApplication:
                 self.paint_area.current_cursor_point = mapped_data
 
                 # checking if cursor position is in paint area
-                # if can be removed when fullscreen
-                if mapped_data[0] > self.paint_area_absolut_x_pos and mapped_data[1] > self.paint_area_absolut_y_pos:
-                    if self.paint_area.drawing:
-                        # drawing into the paint area
-                        self.paint_area.add_point(*mapped_data)
+                # if mapped_data[0] > self.paint_area_absolut_x_pos and mapped_data[1] > self.paint_area_absolut_y_pos:
+                if self.paint_area.drawing:
+                    # drawing into the paint area
+                    self.paint_area.add_point(*mapped_data)
 
                 # recording data for gesture recognition
                 if self.recognition_mode_enabled:
@@ -1169,7 +1046,7 @@ class PaintApplication:
                     self.direction_list.append(self.paint_area.current_cursor_point)
 
                 if self.dragging_mode:
-                    self.moveObjects(self.selected_objects)
+                    self.move_objects(self.selected_objects)
 
                 # handle toolpicker states /selected tool
 
@@ -1190,25 +1067,8 @@ class PaintApplication:
                         for elem in self.selected_objects:
                             elem.move(move_vector)
 
-                        # print(move_vector)
-                        # print("SELECTED OBJECTS:", self.selected_objects)
-
                     self.last_known_cursor_coord = mapped_data
-                    #     self.moving_coords.append(mapped_data)
-                    #
-                    #     if len(self.moving_coords) > 1:
-                    #         p2 = self.moving_coords[-1]
-                    #         p1 = self.moving_coords[-2]
-                    #         move_vector = (p2[0] - p1[0], p2[1] - p1[1])
-                    #
-                    #         for obj in self.selected_objects:
-                    #             obj.move(move_vector)
-                    #
-                    # print(move_vector)
-                if self.tool_picker.active_tool == 'ROTATE' and self.rotating:
-                    pass
 
-                # print(self.moving_coords)
                 self.paint_area.update()
 
     def update_selection_rect(self):
@@ -1244,9 +1104,6 @@ class PaintApplication:
 
 
 def main():
-    addr_hard = 'B8:AE:6E:1B:5B:03'
-    name_hard = 'Nintendo RVL-CNT-01-TR'
-
     app = QtWidgets.QApplication([])
     paint_app = PaintApplication()
 
