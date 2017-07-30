@@ -779,6 +779,8 @@ class PaintApplication:
                 new_y = objects[i].points[j][1] + (movement_data[1] * movement_data[3]) / 10
                 objects[i].points[j] = (new_x, new_y)
 
+    # calculation of direction through comparison of the 2 last given coordinates
+    # and returning a set of distances and directions for each coordinate
     def calculate_direction(self):
         self.direction_list
         x1 = self.direction_list[0][0]
@@ -842,6 +844,7 @@ class PaintApplication:
         self.moving = False
         self.moving_coords = []
 
+    # checking the possible cases for the recognized gestures
     def handle_gesture(self, gesture):
         if gesture.name == 'Swipe left':
             if self.active_area == 'paint_area':
@@ -869,6 +872,7 @@ class PaintApplication:
             self.selection_mode = 'standard'
             print("standard")
 
+    # called for every ir-event
     def handle_ir_data(self, ir_data):
 
         # top left: x=0 y=786

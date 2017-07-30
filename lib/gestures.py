@@ -718,6 +718,7 @@ class GestureRecognition:
             points_new.append(p_new)
         return points_new
 
+    # rotation removed, testing showed better recognition without rotation
     def normalize(self, points):  # put everything together
         points_new = self.resample(points)
         angle = -self.angle_between(points_new[0], self.centroid(points_new))
@@ -725,6 +726,7 @@ class GestureRecognition:
         points_new = self.scale(points_new)
         return points_new
 
+    # to be removed?
     def add_template(self, name, points):
         points = self.normalize(points)
         gesture = GestureTemplate(name, points)
