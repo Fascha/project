@@ -6,6 +6,7 @@ from lib.shapes import Line, Circles
 
 from lib.undo_handler import UndoHandler
 
+
 class PaintArea(QtWidgets.QWidget):
     """
     Created by Fabian Schatz
@@ -182,4 +183,3 @@ class PaintArea(QtWidgets.QWidget):
     def decrease_pen_size(self):
         if self.active_size > 1:
             self.active_size -= 1
-

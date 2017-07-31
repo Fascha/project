@@ -94,8 +94,6 @@ TODO:
 """
 
 
-
-
 class PaintApplication:
     """
     Created by Fabian Schatz
@@ -452,7 +450,7 @@ class PaintApplication:
                 # selection tool
                 # checking if the current state is the selection state
                 if self.tool_picker.active_tool == 'SELECT' and self.selection_mode_enabled:
-                    if not self.select_area_start_pos: # if there is no start position set yet we will set it
+                    if not self.select_area_start_pos:  # if there is no start position set yet we will set it
                         self.select_area_start_pos = mapped_data
                     # we constantly update the end position so we get a responsive selection rect
                     self.select_area_end_pos = mapped_data

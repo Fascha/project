@@ -18,4 +18,3 @@ class UndoHandler(QtWidgets.QUndoCommand):
     def redo(self):
         if self.deleted_obj is not None:
             self.paint_objects.append(self.deleted_obj)
-

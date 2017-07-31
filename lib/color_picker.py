@@ -91,4 +91,3 @@ class Color(QtWidgets.QPushButton):
     def unhighlight(self):
         self.highlighted = False
         self.setStyleSheet(self.css_not_highlighted)
-
