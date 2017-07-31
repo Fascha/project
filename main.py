@@ -770,7 +770,6 @@ class PaintApplication:
             elif button[0] == 'Two':
                 self.paint_area.decrease_pen_size()
 
-
     def start_selection(self):
         self.selection_mode_enabled = True
         self.select_area_start_pos = None
@@ -781,6 +780,12 @@ class PaintApplication:
         self.paint_area.selection_rect = None
 
     def get_selected_objects(self):
+        """
+        This function iterates over all paint_objects and compares every point of the object
+        with the coordinates of the selection rect. If we get a match the object is appended to the selection
+        and the objects selected variable is set to true
+        :return: all matched objects as a list
+        """
         selected_objects = []
         if self.select_tlx and self.select_tly and self.select_brx and self.select_bry:
             for obj in self.paint_area.paint_objects:
@@ -815,8 +820,13 @@ class PaintApplication:
         self.moving = False
         self.moving_coords = []
 
-    # checking the possible cases for the recognized gestures
     def handle_gesture(self, gesture):
+        """
+        This function handles all available gestures defined in the __init__ of lib/gestures.py
+
+        :param gesture: Gesture name as String
+        """
+
         if gesture.name == 'Swipe left':
             if self.active_area == 'paint_area':
                 self.paint_area.undo_drawing()
@@ -832,7 +842,6 @@ class PaintApplication:
         elif gesture.name == 'M_shape':
             self.tool_picker.btn_tools['MOVE'].click()
         elif gesture.name == 'C_shape':
-            self.selection_mode = 'colorpicker'
             self.paint_area.color_screen = True
             self.paint_area.update()
         elif gesture.name == 'mirrored_C_shape':
@@ -840,10 +849,7 @@ class PaintApplication:
             if len(self.selected_objects) > 0:
                 for obj in self.selected_objects:
                     obj.selected = False
-            self.selection_mode = 'standard'
-            print("standard")
 
-    # called for every ir-event
     def handle_ir_data(self, ir_data):
         """
         This function is registered as a callback to the WiiMote.
@@ -945,7 +951,8 @@ class PaintApplication:
 
         self.paint_area.selection_rect = QtCore.QRect(tl, br)
 
-    def fill_label_background(self, label, color):
+    @staticmethod
+    def fill_label_background(label, color):
         label.setAutoFillBackground(True)
         palette = label.palette()
         palette.setColor(label.backgroundRole(), color)
