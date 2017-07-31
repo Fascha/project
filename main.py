@@ -574,13 +574,12 @@ class PaintApplication:
         self.select_area_start_pos = None
         self.select_area_end_pos = None
         self.selection_mode_enabled = False
-        self.dragging_mode = False
+
         self.select_tlx = None
         self.select_tly = None
         self.select_brx = None
         self.select_bry = None
         self.selected_objects = []
-        self.direction_list = []
 
         self.moving = False
         self.moving_coords = []
@@ -771,34 +770,6 @@ class PaintApplication:
             elif button[0] == 'Two':
                 self.paint_area.decrease_pen_size()
 
-    def move_objects(self, objects):
-        movement_data = self.calculate_direction()
-        for i in range(len(objects)):
-            for j in range(len(objects[i].points)):
-                new_x = objects[i].points[j][0] + (movement_data[0] * movement_data[2]) / 10
-                new_y = objects[i].points[j][1] + (movement_data[1] * movement_data[3]) / 10
-                objects[i].points[j] = (new_x, new_y)
-
-    # calculation of direction through comparison of the 2 last given coordinates
-    # and returning a set of distances and directions for each coordinate
-    def calculate_direction(self):
-        self.direction_list
-        x1 = self.direction_list[0][0]
-        y1 = self.direction_list[0][1]
-        x2 = self.direction_list[1][0]
-        y2 = self.direction_list[1][1]
-        distX = math.sqrt(math.pow((x2 - x1), 2))
-        distY = math.sqrt(math.pow((y2 - y1), 2))
-        if x1 < x2:
-            directionX = 1
-        else:
-            directionX = -1
-        if y1 < y2:
-            directionY = 1
-        else:
-            directionY = -1
-
-        return distX, distY, directionX, directionY
 
     def start_selection(self):
         self.selection_mode_enabled = True
@@ -874,32 +845,36 @@ class PaintApplication:
 
     # called for every ir-event
     def handle_ir_data(self, ir_data):
+        """
+        This function is registered as a callback to the WiiMote.
+        It gets called everytime there is new IR-Data available from the WiiMote
 
-        # top left: x=0 y=786
-        # top right: x=1023 y=786
-        # bottom left: x=0 y=0
-        # bottom right: x=1023 y=0
+        Some Reference Points of the IR-Camera
+        top left: x=0 y=786
+        top right: x=1023 y=786
+        bottom left: x=0 y=0
+        bottom right: x=1023 y=0
 
-        self.num_ir_objects.setText("%d" % len(ir_data))
+        :param ir_data: List of up to 4 recognized IR Markers
+        """
+
+        # visual representation of the number of ir markers recognized
+        # for each marker a led on the bottom end of the wiimote will light up
         led_list = [0, 0, 0, 0]
         for x in range(len(ir_data)):
             led_list[x] = 1
         self.wm.set_leds(led_list)
 
         # there need to be the four markers for the corners
+        # if there are not 4 markers our projective transformation won't work
         if len(ir_data) == 4:
 
-            x = [ir_object['x'] for ir_object in ir_data]
-            y = [ir_object['y'] for ir_object in ir_data]
-
             # needed so we don't get an error when connecting the WiiMote
-            if x[0] < 1023:
+            if ir_data[0]['x'] < 1023:
                 sensor_coords = [(ir_object['x'], ir_object['y']) for ir_object in ir_data]
-
                 self.mapping.calculate_source_to_dest(sensor_coords)
 
                 mapped_data = self.mapping.get_pointing_point()
-
                 # from here on we can do everything with the calculated "cursor" pos
 
                 # setting cursor pos
@@ -913,24 +888,15 @@ class PaintApplication:
                 if self.recognition_mode_enabled:
                     self.recognition_data.append(mapped_data)
 
-                if len(self.direction_list) < 2:
-                    self.direction_list.append(self.paint_area.current_cursor_point)
-                elif len(self.direction_list) == 2:
-                    self.direction_list[0] = self.direction_list[1]
-                    self.direction_list = self.direction_list[:1]
-                    self.direction_list.append(self.paint_area.current_cursor_point)
-
-                if self.dragging_mode:
-                    self.move_objects(self.selected_objects)
-
-                # handle toolpicker states /selected tool
+                # handle toolpicker states
+                # selection tool
+                # checking if the current state is the selection state
                 if self.tool_picker.active_tool == 'SELECT' and self.selection_mode_enabled:
-                    if not self.select_area_start_pos:
+                    if not self.select_area_start_pos: # if there is no start position set yet we will set it
                         self.select_area_start_pos = mapped_data
-
+                    # we constantly update the end position so we get a responsive selection rect
                     self.select_area_end_pos = mapped_data
 
-                    # print("SELECTED OBJECTS:", self.selected_objects)
                     self.update_selection_rect()
 
                 if self.tool_picker.active_tool == 'MOVE' and self.moving:
@@ -946,6 +912,15 @@ class PaintApplication:
                 self.paint_area.update()
 
     def update_selection_rect(self):
+        """
+        This function determines the top left corner and the bottom right corner of the selection rect
+        This is needed to be able to pull the rect in every direction, without this calculation we could
+        only pull the rect from the top left to the bottom right
+
+        Qt Documentation:
+        Constructs a rectangle with the given topLeft and bottomRight corners.
+        """
+
         if self.select_area_end_pos[0] > self.select_area_start_pos[0]:
             tlx = self.select_area_start_pos[0]
             brx = self.select_area_end_pos[0]
