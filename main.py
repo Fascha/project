@@ -1,14 +1,13 @@
+import sys
+from collections import OrderedDict
+from functools import partial
+
+from PyQt5 import Qt, QtGui, QtCore, QtWidgets
+
 import lib.wiimote as wiimote
 from lib.gestures import GestureRecognition
-from lib.wiimote_mapping import Mapping
-import sys
-import math
-from functools import partial
 from lib.shapes import *
-from PyQt5 import Qt, QtGui, QtCore, QtWidgets
-from collections import OrderedDict
-import numpy as np
-
+from lib.wiimote_mapping import Mapping
 
 """
 TODO:
@@ -484,8 +483,7 @@ class ToolPicker(QtWidgets.QWidget):
 
         for name, color in self.tools.items():
             btn = Tool(name)
-            btn.setFixedSize(self.height/4 - 10, self.height/4 - 10)
-
+            btn.setFixedHeight(self.height/len(self.tools) - 10)
             layout.addWidget(btn)
             self.btn_tools[name] = btn
         self.setLayout(layout)
@@ -605,21 +603,15 @@ class PaintApplication:
         self.setup_left_column(8 * self.window.width() / 128)
         self.setup_paint_area(120 * self.window.width() / 128, self.window.height())
 
+        self.connect_fake_buttons_for_wiimote()
+
     def setup_left_column(self, width):
         """
-            - shapepicker
+        This function will setup the left colum of the UI.
+        It includes a WiiMote Section containing a LineEdit to enter your Mac Address and a Button to Connect.
+        Additionally it contains a visual representation of the currently selected Shape and Tool
 
-            - colorpicker
-
-            - toolpicker
-
-            - wiimote:
-                - lineedit for mac addr
-                - button to connect
-                - status of connection
-
-            - count ir makers
-
+        :param width: desired width of the colum as an int
         """
 
         left_colum_widget = QtWidgets.QWidget()
@@ -631,18 +623,16 @@ class PaintApplication:
         layout.addWidget(self.shape_picker)
 
         self.color_picker = ColorPicker(width, 100)
-        # layout.addWidget(self.color_picker)
 
-        self.tool_picker = ToolPicker(width, 4*self.window.height()/12)
+        layout.addSpacing(50)
+
+        self.tool_picker = ToolPicker(width, 3*self.window.height()/12)
         layout.addWidget(self.tool_picker)
 
         self.btn_m = QtWidgets.QPushButton("-")
         self.btn_p = QtWidgets.QPushButton("+")
 
-        # layout.addWidget(self.btn_m)
-        # layout.addWidget(self.btn_p)
-
-        # layout.addWidget(QtWidgets.QLabel("Connection status"))
+        layout.addSpacing(200)
         self.label_wm_connection_status = QtWidgets.QLabel("Not connected")
         self.label_wm_connection_status.setAlignment(Qt.Qt.AlignCenter)
         self.label_wm_connection_status.setFixedHeight(100)
@@ -651,21 +641,14 @@ class PaintApplication:
 
         layout.addWidget(QtWidgets.QLabel("Mac Address:"))
         self.line_edit_br_addr = QtWidgets.QLineEdit()
+        # default value of you own wiimote
         self.line_edit_br_addr.setText('B8:AE:6E:1B:5B:03')
-        # self.line_edit_br_addr.setText('18:2a:7b:c6:4c:e7')
         layout.addWidget(self.line_edit_br_addr)
         self.button_connect = QtWidgets.QPushButton("Connect")
         self.button_connect.clicked.connect(self.connect_wm)
         layout.addWidget(self.button_connect)
 
-        # layout.addWidget(QtWidgets.QLabel("Number of tracked IR-Markers:"))
-        self.num_ir_objects = QtWidgets.QLabel("0")
-        font = QtGui.QFont("Helvetica", 32)
-        self.num_ir_objects.setFont(font)
-        self.num_ir_objects.setFixedHeight(300)
-        # layout.addWidget(self.num_ir_objects)
-
-        # needed so the elements do not stretch the whole hieght and therefore have huge white gaps inbetween
+        # needed so the elements do not stretch the whole height and therefore have huge white gaps inbetween
         layout.addStretch()
 
         self.main_layout.addWidget(left_colum_widget)
@@ -675,6 +658,11 @@ class PaintApplication:
 
         self.main_layout.addWidget(self.paint_area)
 
+    def connect_fake_buttons_for_wiimote(self):
+        """
+        This function connects UI elements so we can use them as Fake Buttons and invoke a clickevent
+        partial is used so we can add parameters to the connection
+        """
         self.btn_p.clicked.connect(self.paint_area.increase_pen_size)
         self.btn_m.clicked.connect(self.paint_area.decrease_pen_size)
 
