@@ -1,7 +1,4 @@
 class Circles:
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, color, size=2):
         self.points = []
@@ -20,9 +17,6 @@ class Circles:
 
 
 class Pixel:
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, x, y, color, size=2):
         self.x = x
@@ -33,9 +27,6 @@ class Pixel:
 
 
 class Line:
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, color, size=5):
         self.points = []
@@ -54,9 +45,6 @@ class Line:
 
 
 class Path:
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, color, points=[], color_r=255, color_g=255, color_b=255, stroke_width=1, opacity=1):
         self.points = points

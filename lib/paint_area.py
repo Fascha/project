@@ -8,9 +8,6 @@ from lib.undo_handler import UndoHandler
 
 
 class PaintArea(QtWidgets.QWidget):
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, width=1024, height=768):
         super().__init__()

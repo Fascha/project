@@ -4,9 +4,6 @@ from PyQt5 import QtWidgets, QtGui, Qt
 
 
 class ColorPicker(QtWidgets.QWidget):
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, width, height):
         self.width = width
@@ -57,9 +54,6 @@ class ColorPicker(QtWidgets.QWidget):
 
 
 class Color(QtWidgets.QPushButton):
-    """
-    Created by Fabian Schatz
-    """
 
     def __init__(self, r=0, g=0, b=0, name='TEST', x=None, y=None):
         super().__init__()
